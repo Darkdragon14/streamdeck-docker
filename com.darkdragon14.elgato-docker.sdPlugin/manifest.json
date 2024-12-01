@@ -1,0 +1,63 @@
+{
+	"Name": "elgato-docker",
+	"Version": "0.1.0.0",
+	"Author": "@Darkdragon14",
+	"Actions": [
+		{
+			"Name": "Counter",
+			"UUID": "com.darkdragon14.elgato-docker.increment",
+			"Icon": "imgs/actions/counter/icon",
+			"Tooltip": "Displays a count, which increments by one on press.",
+			"PropertyInspectorPath": "ui/increment-counter.html",
+			"Controllers": [
+				"Keypad"
+			],
+			"States": [
+				{
+					"Image": "imgs/actions/counter/key",
+					"TitleAlignment": "middle"
+				}
+			]
+		},
+		{
+			"Name": "Docker start",
+			"UUID": "com.darkdragon14.elgato-docker.docker-start",
+			"Icon": "imgs/actions/docker/icon",
+			"Tooltip": "Start docker container",
+			"PropertyInspectorPath": "ui/docker/docker-start.html",
+			"Controllers": [
+				"Keypad"
+			],
+			"States": [
+				{
+					"Image": "imgs/actions/docker/key",
+					"TitleAlignment": "middle"
+				}
+			]
+		}
+	],
+	"Category": "elgato-docker",
+	"CategoryIcon": "imgs/plugin/category-icon",
+	"CodePath": "bin/plugin.js",
+	"Description": "Control your docker's container with your Stream Deck",
+	"Icon": "imgs/plugin/marketplace",
+	"SDKVersion": 2,
+	"Software": {
+		"MinimumVersion": "6.4"
+	},
+	"OS": [
+		{
+			"Platform": "mac",
+			"MinimumVersion": "10.15"
+		},
+		{
+			"Platform": "windows",
+			"MinimumVersion": "10"
+		}
+	],
+	"Nodejs": {
+		"Version": "20",
+		"Debug": "enabled"
+	},
+	"UUID": "com.darkdragon14.elgato-docker"
+}
