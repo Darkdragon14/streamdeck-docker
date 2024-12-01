@@ -8,18 +8,9 @@
 </head>
 
 <body>
-    <!--
-        Learn more about property inspector components at https://sdpi-components.dev/docs/components
-    -->
     <sdpi-item label="Container">
-        <sdpi-textfield  setting="containerName"></sdpi-textfield>
+        <sdpi-select setting="containerName" placeholder="Select a container" datasource="getContainers" loading="Fetching containers..." hot-reload>
+        </sdpi-select>
     </sdpi-item>
-    <!--
-        <sdpi-item label="Container">
-            <sdpi-select id="containes-selector" setting="containerName" placeholder="Please choose a container" disabled="true">
-            </sdpi-select>
-        </sdpi-item>
-    -->
 </body>
-<!--<script src="get-containers.js"></script>-->
 </html>

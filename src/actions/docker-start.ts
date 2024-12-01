@@ -1,4 +1,4 @@
-import streamDeck, { action, KeyDownEvent, SingletonAction, WillAppearEvent, Logger } from "@elgato/streamdeck";
+import streamDeck, { action, KeyDownEvent, SingletonAction, WillAppearEvent, SendToPluginEvent, DidReceiveSettingsEvent, JsonObject, Logger } from "@elgato/streamdeck";
 import { Docker } from "node-docker-api";
 
 const docker = new Docker({socketPath: '//./pipe/docker_engine'});
@@ -8,14 +8,13 @@ interface DockerContainerData {
     State: string;
 }
 
-
 @action({ UUID: "com.darkdragon14.elgato-docker.docker-start" })
 export class DockerStart extends SingletonAction<DockerStartSettings> {
     override async onWillAppear(ev: WillAppearEvent<DockerStartSettings>): Promise<void> {
         let { containerName, status }:DockerStartSettings = ev.payload.settings;
 
         const containers = await docker.container.list({all: true});
-        // const containerNames = containers.map(c => ({ name: c.data.Names[0].replace("/", "") }));
+    
         if (!containerName) {
             containerName = ''
         }
@@ -34,6 +33,32 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
             ev.action.setTitle("Not Found");
         }
     }
+
+    override async onSendToPlugin(ev: SendToPluginEvent<JsonObject, DockerStartSettings>): Promise<void> {
+        streamDeck.logger.debug(ev)
+		if (ev.payload.event == "getContainers")
+		{
+            const containers = await docker.container.list({all: true});
+            const containerNames = containers.map(c => { 
+                const data = c.data as DockerContainerData
+                const name = data.Names[0].replace("/", "")
+                return {
+                    label: name,
+                    value: name
+                }
+            });
+			streamDeck.ui.current?.sendToPropertyInspector({
+				event: "getContainers",
+				items: containerNames
+			})
+		}
+		streamDeck.connect();
+	}
+
+    override onDidReceiveSettings(ev: DidReceiveSettingsEvent<DockerStartSettings>): void {
+		streamDeck.logger.debug(ev)
+        ev.action.setTitle(ev.payload?.settings?.containerName || "No title")
+	}
 
     override async onKeyDown(ev: KeyDownEvent) {
         const { containerName }:DockerStartSettings = ev.payload.settings;
