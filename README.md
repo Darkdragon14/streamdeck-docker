@@ -1,5 +1,6 @@
 # StreamDeck Docker
 
+[![Release](https://img.shields.io/github/v/release/Darkdragon14/streamdeck-docker.svg)](https://github.com/Darkdragon14/streamdeck-docker/releases)
 [![Prettier with elgao's config](https://github.com/Darkdragon14/streamdeck-docker/actions/workflows/prettier.yml/badge.svg)](https://github.com/Darkdragon14/streamdeck-docker/actions/workflows/prettier.yml)
 
 <div align="center">
