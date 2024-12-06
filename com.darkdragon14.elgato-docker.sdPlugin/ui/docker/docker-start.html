@@ -1,16 +1,21 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
+	<head lang="en">
+		<title>Docekr Start Settings</title>
+		<meta charset="utf-8" />
+		<script src="https://sdpi-components.dev/releases/v3/sdpi-components.js"></script>
+	</head>
 
-<head lang="en">
-    <title>Docekr Start Settings</title>
-    <meta charset="utf-8" />
-    <script src="https://sdpi-components.dev/releases/v3/sdpi-components.js"></script>
-</head>
-
-<body>
-    <sdpi-item label="Container">
-        <sdpi-select setting="containerName" placeholder="Select a container" datasource="getContainers" loading="Fetching containers..." hot-reload>
-        </sdpi-select>
-    </sdpi-item>
-</body>
+	<body>
+		<sdpi-item label="Container">
+			<sdpi-select
+				setting="containerName"
+				placeholder="Select a container"
+				datasource="getContainers"
+				loading="Fetching containers..."
+				hot-reload
+			>
+			</sdpi-select>
+		</sdpi-item>
+	</body>
 </html>

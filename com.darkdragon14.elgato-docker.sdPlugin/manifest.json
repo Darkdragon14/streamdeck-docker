@@ -1,53 +1,53 @@
 {
-	"Name": "elgato-docker",
-	"Version": "0.1.0.0",
-	"Author": "@Darkdragon14",
-	"Actions": [
-		{
-			"Name": "Docker start",
-			"UUID": "com.darkdragon14.elgato-docker.docker-start",
-			"Icon": "imgs/actions/docker/icon",
-			"Tooltip": "Start docker container",
-			"PropertyInspectorPath": "ui/docker/docker-start.html",
-			"Controllers": [
-				"Keypad"
-			],
-			"States": [
-				{
-					"Image": "imgs/actions/docker-running/key",
-					"TitleAlignment": "middle",
-					"FontSize": 12
-				},
-				{
-					"Image": "imgs/actions/docker-stopped/key",
-					"TitleAlignment": "middle",
-					"FontSize": 12
-				}
-			]
-		}
-	],
-	"Category": "Docker",
-	"CategoryIcon": "imgs/plugin/category-icon",
-	"CodePath": "bin/plugin.js",
-	"Description": "Control your docker's container with your Stream Deck",
-	"Icon": "imgs/plugin/marketplace",
-	"SDKVersion": 2,
-	"Software": {
-		"MinimumVersion": "6.4"
-	},
-	"OS": [
-		{
-			"Platform": "mac",
-			"MinimumVersion": "10.15"
-		},
-		{
-			"Platform": "windows",
-			"MinimumVersion": "10"
-		}
-	],
-	"Nodejs": {
-		"Version": "20",
-		"Debug": "enabled"
-	},
-	"UUID": "com.darkdragon14.elgato-docker"
+    "Name": "elgato-docker",
+    "Version": "0.1.0.0",
+    "Author": "@Darkdragon14",
+    "Actions": [
+        {
+            "Name": "Docker start",
+            "UUID": "com.darkdragon14.elgato-docker.docker-start",
+            "Icon": "imgs/actions/docker/icon",
+            "Tooltip": "Start docker container",
+            "PropertyInspectorPath": "ui/docker/docker-start.html",
+            "Controllers": [
+                "Keypad"
+            ],
+            "States": [
+                {
+                    "Image": "imgs/actions/docker-running/key",
+                    "TitleAlignment": "middle",
+                    "FontSize": 12
+                },
+                {
+                    "Image": "imgs/actions/docker-stopped/key",
+                    "TitleAlignment": "middle",
+                    "FontSize": 12
+                }
+            ]
+        }
+    ],
+    "Category": "Docker",
+    "CategoryIcon": "imgs/plugin/category-icon",
+    "CodePath": "bin/plugin.js",
+    "Description": "Control your docker's container with your Stream Deck",
+    "Icon": "imgs/plugin/marketplace",
+    "SDKVersion": 2,
+    "Software": {
+        "MinimumVersion": "6.4"
+    },
+    "OS": [
+        {
+            "Platform": "mac",
+            "MinimumVersion": "10.15"
+        },
+        {
+            "Platform": "windows",
+            "MinimumVersion": "10"
+        }
+    ],
+    "Nodejs": {
+        "Version": "20",
+        "Debug": "enabled"
+    },
+    "UUID": "com.darkdragon14.elgato-docker"
 }
