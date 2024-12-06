@@ -1,4 +1,4 @@
-name: Check Prettier Format
+name: Prettier with Elgato's configs
 on: [push]
 
 jobs:
