@@ -1,5 +1,7 @@
 # StreamDeck Docker
 
+[![Prettier with elgao's config](https://github.com/Darkdragon14/streamdeck-docker/actions/workflows/prettier.yml/badge.svg)](https://github.com/Darkdragon14/streamdeck-docker/actions/workflows/prettier.yml)
+
 <div align="center">
   <h2>🚧 Project Under Development 🚧</h2>
   <p>
