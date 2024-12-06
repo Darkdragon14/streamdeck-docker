@@ -4,22 +4,6 @@
 	"Author": "@Darkdragon14",
 	"Actions": [
 		{
-			"Name": "Counter",
-			"UUID": "com.darkdragon14.elgato-docker.increment",
-			"Icon": "imgs/actions/counter/icon",
-			"Tooltip": "Displays a count, which increments by one on press.",
-			"PropertyInspectorPath": "ui/increment-counter.html",
-			"Controllers": [
-				"Keypad"
-			],
-			"States": [
-				{
-					"Image": "imgs/actions/counter/key",
-					"TitleAlignment": "middle"
-				}
-			]
-		},
-		{
 			"Name": "Docker start",
 			"UUID": "com.darkdragon14.elgato-docker.docker-start",
 			"Icon": "imgs/actions/docker/icon",
@@ -30,13 +14,19 @@
 			],
 			"States": [
 				{
-					"Image": "imgs/actions/docker/key",
-					"TitleAlignment": "middle"
+					"Image": "imgs/actions/docker-running/key",
+					"TitleAlignment": "middle",
+					"FontSize": 12
+				},
+				{
+					"Image": "imgs/actions/docker-stopped/key",
+					"TitleAlignment": "middle",
+					"FontSize": 12
 				}
 			]
 		}
 	],
-	"Category": "elgato-docker",
+	"Category": "Docker",
 	"CategoryIcon": "imgs/plugin/category-icon",
 	"CodePath": "bin/plugin.js",
 	"Description": "Control your docker's container with your Stream Deck",

@@ -1,4 +1,4 @@
-import streamDeck, { action, KeyDownEvent, SingletonAction, WillAppearEvent, SendToPluginEvent, DidReceiveSettingsEvent, JsonObject, Logger } from "@elgato/streamdeck";
+import streamDeck, { action, KeyDownEvent, SingletonAction, WillAppearEvent, WillDisappearEvent, SendToPluginEvent, DidReceiveSettingsEvent, JsonObject, Logger } from "@elgato/streamdeck";
 import { Docker } from "node-docker-api";
 
 const docker = new Docker({socketPath: '//./pipe/docker_engine'});
@@ -10,6 +10,8 @@ interface DockerContainerData {
 
 @action({ UUID: "com.darkdragon14.elgato-docker.docker-start" })
 export class DockerStart extends SingletonAction<DockerStartSettings> {
+    private updateInterval: NodeJS.Timeout | undefined;
+
     override async onWillAppear(ev: WillAppearEvent<DockerStartSettings>): Promise<void> {
         let { containerName, status }:DockerStartSettings = ev.payload.settings;
 
@@ -31,6 +33,20 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
             ev.action.setTitle(title);
         } else {
             ev.action.setTitle("Not Found");
+        }
+
+        await this.updateContainerState(ev, containerName);
+
+        // Démarrage du check régulier toutes les secondes
+        this.updateInterval = setInterval(async () => {
+            await this.updateContainerState(ev, containerName);
+        }, 1000);
+    }
+
+    override onWillDisappear(_ev: WillDisappearEvent<DockerStartSettings>): void {
+        if (this.updateInterval) {
+            clearInterval(this.updateInterval);
+            this.updateInterval = undefined;
         }
     }
 
@@ -61,6 +77,7 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 	}
 
     override async onKeyDown(ev: KeyDownEvent) {
+        clearInterval(this.updateInterval);
         const { containerName }:DockerStartSettings = ev.payload.settings;
 
         if (!containerName) {
@@ -80,15 +97,43 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
             return;
         }
 
-        const data = container.data as DockerContainerData;
+        const data = container.data as DockerContainerData; 
         if (data.State === "running") {
-            await container.stop(); 
+            await container.stop();
+            // Waiting the container are stopped
+            await container.wait();
             streamDeck.logger.info(`Container ${containerName} stopped.`);
         } else {
             await container.start();
             streamDeck.logger.info(`Container ${containerName} started.`);
         }
+
+        this.updateInterval = setInterval(async () => {
+            await this.updateContainerState(ev, containerName);
+        }, 1000);
 	}
+
+    private async updateContainerState(ev: any, containerName: String) {
+        const running = await this.isContainerRunning(containerName);
+        const newState = running ? 0 : 1;
+        ev.action.setState(newState);
+    }
+
+    private async isContainerRunning(containerName: String) {
+        const containers = await docker.container.list({all: true});
+        const container = containers.find(c => {
+            const data = c.data as DockerContainerData;
+            return data.Names.includes(`/${containerName}`)
+        });
+
+        if (!container) {
+            return false;
+        }
+
+        const data = container.data as DockerContainerData;
+
+        return data.State === "running" ? true : false;
+    }
 }
 
 
