@@ -29,7 +29,7 @@
             "Name": "Containers Count",
             "UUID": "com.darkdragon14.elgato-docker.containers-count",
             "Icon": "imgs/actions/docker/icon",
-            "Tooltip": "Containers's number with this status",
+            "Tooltip": "Number of containers with this status",
             "PropertyInspectorPath": "ui/docker/containers-count.html",
             "Controllers": [
                 "Keypad"
