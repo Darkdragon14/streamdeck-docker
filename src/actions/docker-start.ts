@@ -3,7 +3,6 @@ import streamDeck, {
 	DidReceiveSettingsEvent,
 	JsonObject,
 	KeyDownEvent,
-	Logger,
 	SendToPluginEvent,
 	SingletonAction,
 	WillAppearEvent,
@@ -12,6 +11,14 @@ import streamDeck, {
 import { Docker } from "node-docker-api";
 
 const docker = new Docker({ socketPath: "//./pipe/docker_engine" });
+
+/**
+ * Settings for {@link DockerStart}.
+ */
+type DockerStartSettings = {
+	containerName?: string;
+	status?: string;
+};
 
 interface DockerContainerData {
 	Names: string[];
@@ -30,7 +37,6 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 		if (!containerName) {
 			containerName = "";
 		}
-		streamDeck.logger.info(JSON.stringify(containers[1].data));
 		const container = containers.find((c) => {
 			const data = c.data as DockerContainerData;
 			return data.Names.includes(`/${containerName}`);
@@ -47,7 +53,6 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 
 		await this.updateContainerState(ev, containerName);
 
-		// Démarrage du check régulier toutes les secondes
 		this.updateInterval = setInterval(async () => {
 			await this.updateContainerState(ev, containerName);
 		}, 1000);
@@ -61,7 +66,6 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 	}
 
 	override async onSendToPlugin(ev: SendToPluginEvent<JsonObject, DockerStartSettings>): Promise<void> {
-		streamDeck.logger.debug(ev);
 		if (ev.payload.event == "getContainers") {
 			const containers = await docker.container.list({ all: true });
 			const containerNames = containers.map((c) => {
@@ -81,7 +85,6 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 	}
 
 	override onDidReceiveSettings(ev: DidReceiveSettingsEvent<DockerStartSettings>): void {
-		streamDeck.logger.debug(ev);
 		ev.action.setTitle(ev.payload?.settings?.containerName || "No title");
 	}
 
@@ -111,10 +114,8 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 			await container.stop();
 			// Waiting the container are stopped
 			await container.wait();
-			streamDeck.logger.info(`Container ${containerName} stopped.`);
 		} else {
 			await container.start();
-			streamDeck.logger.info(`Container ${containerName} started.`);
 		}
 
 		this.updateInterval = setInterval(async () => {
@@ -144,11 +145,3 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 		return data.State === "running" ? true : false;
 	}
 }
-
-/**
- * Settings for {@link DockerStart}.
- */
-type DockerStartSettings = {
-	containerName?: string;
-	status?: string;
-};

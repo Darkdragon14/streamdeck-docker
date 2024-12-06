@@ -24,6 +24,23 @@
                     "FontSize": 12
                 }
             ]
+        },
+        {
+            "Name": "Containers Count",
+            "UUID": "com.darkdragon14.elgato-docker.containers-count",
+            "Icon": "imgs/actions/docker/icon",
+            "Tooltip": "Number of containers with this status",
+            "PropertyInspectorPath": "ui/docker/containers-count.html",
+            "Controllers": [
+                "Keypad"
+            ],
+            "States": [
+                {
+                    "Image": "imgs/actions/docker-running/key",
+                    "TitleAlignment": "middle",
+                    "FontSize": 12
+                }
+            ]
         }
     ],
     "Category": "Docker",
