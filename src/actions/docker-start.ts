@@ -10,7 +10,7 @@ import streamDeck, {
 } from "@elgato/streamdeck";
 import { Docker } from "node-docker-api";
 
-const docker = new Docker({ socketPath: "//./pipe/docker_engine" });
+import { pingDocker } from "../utils/pingDocker";
 
 /**
  * Settings for {@link DockerStart}.
@@ -28,15 +28,28 @@ interface DockerContainerData {
 @action({ UUID: "com.darkdragon14.elgato-docker.docker-start" })
 export class DockerStart extends SingletonAction<DockerStartSettings> {
 	private updateInterval: NodeJS.Timeout | undefined;
+	private docker: Docker;
 
-	override async onWillAppear(ev: WillAppearEvent<DockerStartSettings>): Promise<void> {
+	constructor(docker: Docker) {
+		super();
+		this.docker = docker;
+	}
+
+	override async onWillAppear(ev: WillAppearEvent<DockerStartSettings>): Promise<void> {		
 		let { containerName, status }: DockerStartSettings = ev.payload.settings;
-
-		const containers = await docker.container.list({ all: true });
-
 		if (!containerName) {
 			containerName = "";
 		}
+
+		const dockerIsUp = await pingDocker(this.docker, ev, 2);
+		if (!dockerIsUp) {
+			this.updateInterval = setInterval(async () => {
+				await this.updateContainerState(ev, containerName);
+			}, 1000);
+			return;
+		}
+
+		const containers = await this.docker.container.list({ all: true });
 		const container = containers.find((c) => {
 			const data = c.data as DockerContainerData;
 			return data.Names.includes(`/${containerName}`);
@@ -46,7 +59,7 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 			const data = container.data as DockerContainerData;
 			status = data.State;
 			const title = `${containerName}`;
-			ev.action.setTitle(title);
+			ev.action.setTitle(this.formatTitle(title));
 		} else {
 			ev.action.setTitle("Not Found");
 		}
@@ -67,7 +80,7 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 
 	override async onSendToPlugin(ev: SendToPluginEvent<JsonObject, DockerStartSettings>): Promise<void> {
 		if (ev.payload.event == "getContainers") {
-			const containers = await docker.container.list({ all: true });
+			const containers = await this.docker.container.list({ all: true });
 			const containerNames = containers.map((c) => {
 				const data = c.data as DockerContainerData;
 				const name = data.Names[0].replace("/", "");
@@ -85,10 +98,15 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 	}
 
 	override onDidReceiveSettings(ev: DidReceiveSettingsEvent<DockerStartSettings>): void {
-		ev.action.setTitle(ev.payload?.settings?.containerName || "No title");
+		ev.action.setTitle(this.formatTitle(ev.payload?.settings?.containerName || "No\ntitle"));
 	}
 
 	override async onKeyDown(ev: KeyDownEvent) {
+		const dockerIsUp = await pingDocker(this.docker, ev, 2);
+		if (!dockerIsUp) {
+			return;
+		}
+		
 		clearInterval(this.updateInterval);
 		const { containerName }: DockerStartSettings = ev.payload.settings;
 
@@ -97,7 +115,7 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 			return;
 		}
 
-		const containers = await docker.container.list({ all: true });
+		const containers = await this.docker.container.list({ all: true });
 		const container = containers.find((c) => {
 			const data = c.data as DockerContainerData;
 			return data.Names.includes(`/${containerName}`);
@@ -105,7 +123,7 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 
 		if (!container) {
 			streamDeck.logger.error(`Container ${containerName} not found.`);
-			ev.action.setTitle("Not Found");
+			ev.action.setTitle("Not\nFound");
 			return;
 		}
 
@@ -124,13 +142,19 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 	}
 
 	private async updateContainerState(ev: any, containerName: String) {
+		const dockerIsUp = await pingDocker(this.docker, ev, 2);
+		if (!dockerIsUp) {
+			return;
+		}
+
+		ev.action.setTitle(this.formatTitle(containerName));
 		const running = await this.isContainerRunning(containerName);
 		const newState = running ? 0 : 1;
 		ev.action.setState(newState);
 	}
 
 	private async isContainerRunning(containerName: String) {
-		const containers = await docker.container.list({ all: true });
+		const containers = await this.docker.container.list({ all: true });
 		const container = containers.find((c) => {
 			const data = c.data as DockerContainerData;
 			return data.Names.includes(`/${containerName}`);
@@ -143,5 +167,9 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 		const data = container.data as DockerContainerData;
 
 		return data.State === "running" ? true : false;
+	}
+
+	private formatTitle(title: String) {
+		return title.split("-").join("\n")
 	}
 }
