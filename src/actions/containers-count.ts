@@ -16,6 +16,11 @@ type ContainersListSettings = {
 	status?: string;
 };
 
+type ContainerListOptions = {
+	all?: boolean;
+	status?: string;
+}
+
 @action({ UUID: "com.darkdragon14.elgato-docker.containers-count" })
 export class ContainersCount extends SingletonAction<ContainersListSettings> {
 	private updateInterval: NodeJS.Timeout | undefined;
@@ -60,19 +65,21 @@ export class ContainersCount extends SingletonAction<ContainersListSettings> {
 		}, 1000);
 	}
 
-	private async updateContainersList(ev: any, status: String) {
+	private async updateContainersList(ev: any, status: string) {
 		const dockerIsUp = await pingDocker(this.docker, ev, 1);
 		if (!dockerIsUp) {
 			return;
 		}
 		ev.action.setState(0);
 
-		let containers = [];
+		const options: ContainerListOptions = {}
 		if (status === "all") {
-			containers = await this.docker.container.list({ all: true });
+			options.all = true;
 		} else {
-			containers = await this.docker.container.list({ status });
-		}
+			options.status = status;
+		}		
+		let containers = [];
+		containers = await this.docker.container.list(options);
 
 		const title = `${status}\n${containers.length}`;
 
