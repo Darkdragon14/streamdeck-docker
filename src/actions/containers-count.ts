@@ -7,9 +7,8 @@ import {
 } from "@elgato/streamdeck";
 import { Docker } from "node-docker-api";
 
-import { pingDocker } from "../utils/pingDocker";
-
 import { CONTAINER_COUNT_ERROR_STATE, CONTAINER_LIST_ALL_STATUS } from "../constants/docker";
+import { pingDocker } from "../utils/pingDocker";
 
 /**
  * Settings for {@link containersList}.
@@ -21,7 +20,7 @@ type ContainersListSettings = {
 type ContainerListOptions = {
 	all?: boolean;
 	status?: string;
-}
+};
 
 @action({ UUID: "com.darkdragon14.elgato-docker.containers-count" })
 export class ContainersCount extends SingletonAction<ContainersListSettings> {
@@ -74,12 +73,12 @@ export class ContainersCount extends SingletonAction<ContainersListSettings> {
 		}
 		ev.action.setState(0);
 
-		const options: ContainerListOptions = {}
+		const options: ContainerListOptions = {};
 		if (status === CONTAINER_LIST_ALL_STATUS) {
 			options.all = true;
 		} else {
 			options.status = status;
-		}		
+		}
 		let containers = [];
 		containers = await this.docker.container.list(options);
 

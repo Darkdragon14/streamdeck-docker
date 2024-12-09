@@ -10,9 +10,8 @@ import streamDeck, {
 } from "@elgato/streamdeck";
 import { Docker } from "node-docker-api";
 
-import { pingDocker } from "../utils/pingDocker";
-
 import { CONTAINER_STATUS_RUNNING, DOCKER_START_ERROR_STATE } from "../constants/docker";
+import { pingDocker } from "../utils/pingDocker";
 
 /**
  * Settings for {@link DockerStart}.
