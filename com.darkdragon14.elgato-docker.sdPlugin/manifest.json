@@ -7,7 +7,7 @@
             "Name": "Docker start/stop",
             "UUID": "com.darkdragon14.elgato-docker.docker-start",
             "Icon": "imgs/actions/docker/icon",
-            "Tooltip": "Inverse status between start and stop for the docker container selected",
+            "Tooltip": "Toggle container status between running and stopped.",
             "PropertyInspectorPath": "ui/docker/docker-start.html",
             "Controllers": [
                 "Keypad"
