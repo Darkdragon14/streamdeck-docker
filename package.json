@@ -1,7 +1,8 @@
 {
     "scripts": {
         "build": "rollup -c",
-        "watch": "rollup -c -w --watch.onEnd=\"streamdeck restart com.darkdragon14.elgato-docker\""
+        "watch": "rollup -c -w --watch.onEnd=\"streamdeck restart com.darkdragon14.elgato-docker\"",
+        "prettier": "npx prettier --write ."
     },
     "type": "module",
     "devDependencies": {

@@ -1,13 +1,13 @@
 {
     "Name": "elgato-docker",
-    "Version": "0.1.0.0",
+    "Version": "0.3.0.0",
     "Author": "@Darkdragon14",
     "Actions": [
         {
-            "Name": "Docker start",
+            "Name": "Docker start/stop",
             "UUID": "com.darkdragon14.elgato-docker.docker-start",
             "Icon": "imgs/actions/docker/icon",
-            "Tooltip": "Start docker container",
+            "Tooltip": "Toggle container status between running and stopped.",
             "PropertyInspectorPath": "ui/docker/docker-start.html",
             "Controllers": [
                 "Keypad"
@@ -16,14 +16,21 @@
                 {
                     "Image": "imgs/actions/docker-running/key",
                     "TitleAlignment": "middle",
-                    "FontSize": 12
+                    "FontSize": 9
                 },
                 {
                     "Image": "imgs/actions/docker-stopped/key",
                     "TitleAlignment": "middle",
-                    "FontSize": 12
+                    "FontSize": 9
+                },
+                {
+                    "Image": "imgs/actions/error/key",
+                    "TitleAlignment": "middle",
+                    "FontSize": 9,
+                    "Title": "Please,\nlaunch\nDocker"
                 }
-            ]
+            ],
+            "UserTitleEnabled": false
         },
         {
             "Name": "Containers Count",
@@ -38,9 +45,16 @@
                 {
                     "Image": "imgs/actions/docker-running/key",
                     "TitleAlignment": "middle",
-                    "FontSize": 12
+                    "FontSize": 9
+                },
+                {
+                    "Image": "imgs/actions/error/key",
+                    "TitleAlignment": "middle",
+                    "FontSize": 9,
+                    "Title": "Please,\nlaunch\nDocker"
                 }
-            ]
+            ],
+            "UserTitleEnabled": false
         }
     ],
     "Category": "Docker",
