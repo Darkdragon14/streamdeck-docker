@@ -3,14 +3,6 @@
 [![Release](https://img.shields.io/github/v/release/Darkdragon14/streamdeck-docker.svg)](https://github.com/Darkdragon14/streamdeck-docker/releases)
 [![Prettier with elgao's config](https://github.com/Darkdragon14/streamdeck-docker/actions/workflows/prettier.yml/badge.svg)](https://github.com/Darkdragon14/streamdeck-docker/actions/workflows/prettier.yml)
 
-<div align="center">
-  <h2>🚧 Project Under Development 🚧</h2>
-  <p>
-    This project is in its early stages of development. I'm actively working on it to bring the best features and a seamless experience for users. Stay tuned for updates!
-  </p>
-  <hr/>
-</div>
-
 A powerful plugin for Elgato Stream Deck that allows you to manage Docker containers directly from your Stream Deck. With this tool, you can start, stop, and monitor Docker containers with ease, all while keeping your workflow streamlined.
 
 ## Features
@@ -19,6 +11,14 @@ A powerful plugin for Elgato Stream Deck that allows you to manage Docker contai
 - Display Container Status: Show the current state (e.g., running, stopped) directly on your Stream Deck keys.
 - User-Friendly: Integrates seamlessly with the Stream Deck interface for effortless container management.
 - Multi-Container Support: Handles multiple Docker containers simultaneously.
+
+## Future improvements
+
+- Design icons for the project.
+- Add the ability to create and delete specific containers.
+- Enable container deletion using a dial.
+- Implement starting and stopping containers with a dial.
+- Extend functionality to include more services beyond containers.
 
 ## Prerequisites
 
