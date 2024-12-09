@@ -35,7 +35,7 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 		this.docker = docker;
 	}
 
-	override async onWillAppear(ev: WillAppearEvent<DockerStartSettings>): Promise<void> {		
+	override async onWillAppear(ev: WillAppearEvent<DockerStartSettings>): Promise<void> {
 		let { containerName, status }: DockerStartSettings = ev.payload.settings;
 		if (!containerName) {
 			containerName = "";
@@ -106,7 +106,7 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 		if (!dockerIsUp) {
 			return;
 		}
-		
+
 		clearInterval(this.updateInterval);
 		const { containerName }: DockerStartSettings = ev.payload.settings;
 
@@ -170,6 +170,6 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 	}
 
 	private formatTitle(title: String) {
-		return title.split("-").join("\n")
+		return title.split("-").join("\n");
 	}
 }

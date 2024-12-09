@@ -7,7 +7,7 @@ import {
 } from "@elgato/streamdeck";
 import { Docker } from "node-docker-api";
 
-import { pingDocker } from "../utils/pingDocker"
+import { pingDocker } from "../utils/pingDocker";
 
 /**
  * Settings for {@link containersList}.
