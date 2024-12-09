@@ -9,6 +9,8 @@ import { Docker } from "node-docker-api";
 
 import { pingDocker } from "../utils/pingDocker";
 
+import { CONTAINER_COUNT_ERROR_STATE, CONTAINER_LIST_ALL_STATUS } from "../constants/docker";
+
 /**
  * Settings for {@link containersList}.
  */
@@ -35,7 +37,7 @@ export class ContainersCount extends SingletonAction<ContainersListSettings> {
 		let { status }: ContainersListSettings = ev.payload.settings;
 
 		if (!status) {
-			status = "all";
+			status = CONTAINER_LIST_ALL_STATUS;
 		}
 
 		this.updateContainersList(ev, status);
@@ -57,7 +59,7 @@ export class ContainersCount extends SingletonAction<ContainersListSettings> {
 			clearInterval(this.updateInterval);
 			this.updateInterval = undefined;
 		}
-		const status = ev.payload?.settings?.status || "all";
+		const status = ev.payload?.settings?.status || CONTAINER_LIST_ALL_STATUS;
 		this.updateContainersList(ev, status);
 
 		this.updateInterval = setInterval(async () => {
@@ -66,14 +68,14 @@ export class ContainersCount extends SingletonAction<ContainersListSettings> {
 	}
 
 	private async updateContainersList(ev: any, status: string) {
-		const dockerIsUp = await pingDocker(this.docker, ev, 1);
+		const dockerIsUp = await pingDocker(this.docker, ev, CONTAINER_COUNT_ERROR_STATE);
 		if (!dockerIsUp) {
 			return;
 		}
 		ev.action.setState(0);
 
 		const options: ContainerListOptions = {}
-		if (status === "all") {
+		if (status === CONTAINER_LIST_ALL_STATUS) {
 			options.all = true;
 		} else {
 			options.status = status;

@@ -12,6 +12,8 @@ import { Docker } from "node-docker-api";
 
 import { pingDocker } from "../utils/pingDocker";
 
+import { CONTAINER_STATUS_RUNNING, DOCKER_START_ERROR_STATE } from "../constants/docker";
+
 /**
  * Settings for {@link DockerStart}.
  */
@@ -41,7 +43,7 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 			containerName = "";
 		}
 
-		const dockerIsUp = await pingDocker(this.docker, ev, 2);
+		const dockerIsUp = await pingDocker(this.docker, ev, DOCKER_START_ERROR_STATE);
 		if (!dockerIsUp) {
 			this.updateInterval = setInterval(async () => {
 				await this.updateContainerState(ev, containerName);
@@ -61,7 +63,7 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 			const title = `${containerName}`;
 			ev.action.setTitle(this.formatTitle(title));
 		} else {
-			ev.action.setTitle("Not Found");
+			ev.action.setTitle("Not\nFound");
 		}
 
 		await this.updateContainerState(ev, containerName);
@@ -98,11 +100,11 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 	}
 
 	override onDidReceiveSettings(ev: DidReceiveSettingsEvent<DockerStartSettings>): void {
-		ev.action.setTitle(this.formatTitle(ev.payload?.settings?.containerName || "No\ntitle"));
+		ev.action.setTitle(this.formatTitle(ev.payload?.settings?.containerName || "No\nTitle"));
 	}
 
 	override async onKeyDown(ev: KeyDownEvent) {
-		const dockerIsUp = await pingDocker(this.docker, ev, 2);
+		const dockerIsUp = await pingDocker(this.docker, ev, DOCKER_START_ERROR_STATE);
 		if (!dockerIsUp) {
 			return;
 		}
@@ -122,13 +124,12 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 		});
 
 		if (!container) {
-			streamDeck.logger.error(`Container ${containerName} not found.`);
 			ev.action.setTitle("Not\nFound");
 			return;
 		}
 
 		const data = container.data as DockerContainerData;
-		if (data.State === "running") {
+		if (data.State === CONTAINER_STATUS_RUNNING) {
 			await container.stop();
 			// Waiting the container are stopped
 			await container.wait();
@@ -142,7 +143,7 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 	}
 
 	private async updateContainerState(ev: any, containerName: String) {
-		const dockerIsUp = await pingDocker(this.docker, ev, 2);
+		const dockerIsUp = await pingDocker(this.docker, ev, DOCKER_START_ERROR_STATE);
 		if (!dockerIsUp) {
 			return;
 		}
@@ -166,7 +167,7 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 
 		const data = container.data as DockerContainerData;
 
-		return data.State === "running" ? true : false;
+		return data.State === CONTAINER_STATUS_RUNNING ? true : false;
 	}
 
 	private formatTitle(title: String) {
