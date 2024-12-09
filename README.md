@@ -19,6 +19,7 @@ A powerful plugin for Elgato Stream Deck that allows you to manage Docker contai
 - Enable container deletion using a dial.
 - Implement starting and stopping containers with a dial.
 - Extend functionality to include more services beyond containers.
+- Support remote connections to manage containers.
 
 ## Prerequisites
 
