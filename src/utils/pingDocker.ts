@@ -17,11 +17,7 @@ export async function pingDocker(docker: Docker, ev: any, state: number): Promis
 		return true;
 	} catch (error) {
 		ev.action.setState(state);
-		if (ev.action) {
-			ev.action.setTitle(DOCKER_NOT_RUNNING_TITLE);
-		} else {
-			ev.setTitle(DOCKER_NOT_RUNNING_TITLE);
-		}
+		(ev.action || ev).setTitle(DOCKER_NOT_RUNNING_TITLE);
 		return false;
 	}
 }
