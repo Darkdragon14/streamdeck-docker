@@ -3,3 +3,5 @@ export const CONTAINER_COUNT_ERROR_STATE = 1;
 
 export const CONTAINER_LIST_ALL_STATUS = "all";
 export const CONTAINER_STATUS_RUNNING = "running";
+
+export const DOCKER_NOT_RUNNING_TITLE = "Please,\nlaunch\nDocker";
