@@ -1,4 +1,5 @@
 import { Docker } from "node-docker-api";
+
 import { DOCKER_NOT_RUNNING_TITLE } from "../constants/docker";
 
 /**
@@ -16,7 +17,7 @@ export async function pingDocker(docker: Docker, ev: any, state: number): Promis
 		return true;
 	} catch (error) {
 		ev.action.setState(state);
-		if (ev.action){
+		if (ev.action) {
 			ev.action.setTitle(DOCKER_NOT_RUNNING_TITLE);
 		} else {
 			ev.setTitle(DOCKER_NOT_RUNNING_TITLE);
