@@ -1,6 +1,6 @@
 {
     "Name": "elgato-docker",
-    "Version": "0.4.0.0",
+    "Version": "1.0.0.0",
     "Author": "@Darkdragon14",
     "Actions": [
         {
@@ -55,6 +55,34 @@
                 }
             ],
             "UserTitleEnabled": false
+        },
+        {
+            "Name": "Docker run/rm",
+            "UUID": "com.darkdragon14.elgato-docker.docker-run-or-rm",
+            "Icon": "imgs/actions/docker/icon",
+            "Tooltip": "Run or delete a container.",
+            "PropertyInspectorPath": "ui/docker/docker-run-or-rm.html",
+            "Controllers": [
+                "Keypad"
+            ],
+            "States": [
+                {
+                    "Image": "imgs/actions/docker-running/key",
+                    "TitleAlignment": "middle",
+                    "FontSize": 9
+                },
+                {
+                    "Image": "imgs/actions/docker-stopped/key",
+                    "TitleAlignment": "middle",
+                    "FontSize": 9
+                },
+                {
+                    "Image": "imgs/actions/error/key",
+                    "TitleAlignment": "middle",
+                    "FontSize": 9,
+                    "Title": "Please,\nlaunch\nDocker"
+                }
+            ]
         }
     ],
     "Category": "Docker",
