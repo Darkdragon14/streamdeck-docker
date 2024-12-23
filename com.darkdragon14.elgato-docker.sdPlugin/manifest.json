@@ -1,6 +1,6 @@
 {
     "Name": "elgato-docker",
-    "Version": "0.3.0.0",
+    "Version": "0.4.0.0",
     "Author": "@Darkdragon14",
     "Actions": [
         {
@@ -43,8 +43,8 @@
             ],
             "States": [
                 {
-                    "Image": "imgs/actions/docker-running/key",
-                    "TitleAlignment": "middle",
+                    "Image": "imgs/actions/docker-containers/key",
+                    "TitleAlignment": "top",
                     "FontSize": 9
                 },
                 {
@@ -81,4 +81,4 @@
         "Debug": "enabled"
     },
     "UUID": "com.darkdragon14.elgato-docker"
-}
+} 
