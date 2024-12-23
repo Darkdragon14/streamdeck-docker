@@ -11,6 +11,7 @@ import streamDeck, {
 import { Docker } from "node-docker-api";
 
 import { CONTAINER_STATUS_RUNNING, DOCKER_START_ERROR_STATE } from "../constants/docker";
+import { getContainer } from "../utils/getContainer";
 import { pingDocker } from "../utils/pingDocker";
 
 /**
@@ -50,11 +51,7 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 			return;
 		}
 
-		const containers = await this.docker.container.list({ all: true });
-		const container = containers.find((c) => {
-			const data = c.data as DockerContainerData;
-			return data.Names.includes(`/${containerName}`);
-		});
+		const container = await getContainer(this.docker, containerName);
 
 		if (container) {
 			const data = container.data as DockerContainerData;
@@ -116,11 +113,7 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 			return;
 		}
 
-		const containers = await this.docker.container.list({ all: true });
-		const container = containers.find((c) => {
-			const data = c.data as DockerContainerData;
-			return data.Names.includes(`/${containerName}`);
-		});
+		const container = await getContainer(this.docker, containerName);
 
 		if (!container) {
 			ev.action.setTitle("Not\nFound");
@@ -154,11 +147,7 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 	}
 
 	private async isContainerRunning(containerName: String) {
-		const containers = await this.docker.container.list({ all: true });
-		const container = containers.find((c) => {
-			const data = c.data as DockerContainerData;
-			return data.Names.includes(`/${containerName}`);
-		});
+		const container = await getContainer(this.docker, containerName);
 
 		if (!container) {
 			return false;
