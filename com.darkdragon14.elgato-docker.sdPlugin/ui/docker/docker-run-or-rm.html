@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+	<head lang="en">
+		<title>Docker run or rm Settings</title>
+		<meta charset="utf-8" />
+		<script src="https://sdpi-components.dev/releases/v3/sdpi-components.js"></script>
+	</head>
+
+	<body>
+		<sdpi-item label="Images">
+			<sdpi-select
+				setting="imageName"
+				placeholder="Select a image"
+				datasource="getImages"
+				loading="Fetching images..."
+				hot-reload
+			>
+			</sdpi-select>
+		</sdpi-item>
+		<sdpi-item label="Container name">
+			<sdpi-textfield placeholder="Container name" setting="containerName" required> </sdpi-textfield>
+		</sdpi-item>
+	</body>
+</html>
