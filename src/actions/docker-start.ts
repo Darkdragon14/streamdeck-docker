@@ -12,6 +12,7 @@ import { Docker } from "node-docker-api";
 
 import { CONTAINER_STATUS_RUNNING, DOCKER_START_ERROR_STATE } from "../constants/docker";
 import { getContainer } from "../utils/getContainer";
+import { isContainerRunning } from "../utils/getContainerRunning";
 import { pingDocker } from "../utils/pingDocker";
 
 /**
@@ -141,21 +142,9 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 		}
 
 		ev.action.setTitle(this.formatTitle(containerName));
-		const running = await this.isContainerRunning(containerName);
+		const running = await isContainerRunning(this.docker, containerName);
 		const newState = running ? 0 : 1;
 		ev.action.setState(newState);
-	}
-
-	private async isContainerRunning(containerName: String) {
-		const container = await getContainer(this.docker, containerName);
-
-		if (!container) {
-			return false;
-		}
-
-		const data = container.data as DockerContainerData;
-
-		return data.State === CONTAINER_STATUS_RUNNING ? true : false;
 	}
 
 	private formatTitle(title: String) {
