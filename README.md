@@ -30,7 +30,8 @@ Before using this plugin, ensure you have the following installed:
 
 ### Get the plugin
 
-Go in [Releases](https://github.com/Darkdragon14/streamdeck-docker/releases) section and download the .streamDeckPlugin  file from the latest release.
+Go in [Releases](https://github.com/Darkdragon14/streamdeck-docker/releases) section and download the .streamDeckPlugin file from the latest release.
+
 ### Clone the repository:
 
 ```bash
