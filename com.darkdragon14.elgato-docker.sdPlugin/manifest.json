@@ -83,6 +83,21 @@
                     "Title": "Please,\nlaunch\nDocker"
                 }
             ]
+        },
+        {
+            "Icon": "imgs/actions/docker-running/key",
+            "UUID": "com.darkdragon14.elgato-docker.docker-select-toggle",
+            "Name": "Docker Select and Toggle",
+            "Tooltip": "Rotate to change container and click to start/stop.",
+            "Controllers": ["Encoder"],
+            "Encoder": {
+                "layout": "$X1"
+            },
+            "States": [
+                {
+                    "Image": "imgs/actions/docker-running/key"
+                }
+            ]
         }
     ],
     "Category": "Docker",

@@ -15,7 +15,6 @@ A powerful plugin for Elgato Stream Deck that allows you to manage Docker contai
 ## Future improvements
 
 - Enable container deletion using a dial.
-- Implement starting and stopping containers with a dial.
 - Extend functionality to include more services beyond containers.
 - Support remote connections to manage containers.
 
@@ -28,6 +27,10 @@ Before using this plugin, ensure you have the following installed:
 - Node.js (for development and building the plugin)
 
 ## Installation
+
+### Get the plugin
+
+Go in [Releases](https://github.com/Darkdragon14/streamdeck-docker/releases) section and download the .streamDeckPlugin file from the latest release.
 
 ### Clone the repository:
 
