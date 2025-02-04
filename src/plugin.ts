@@ -4,8 +4,8 @@ import * as os from "os";
 
 import { ContainersCount } from "./actions/containers-count";
 import { DockerRunOrRm } from "./actions/docker-run-or-rm";
-import { DockerStart } from "./actions/docker-start";
 import { DockerSelectToggle } from "./actions/docker-select-toggle";
+import { DockerStart } from "./actions/docker-start";
 
 const socketPath = os.platform() === "win32" ? "//./pipe/docker_engine" : "/var/run/docker.sock";
 const docker = new Docker({ socketPath });
