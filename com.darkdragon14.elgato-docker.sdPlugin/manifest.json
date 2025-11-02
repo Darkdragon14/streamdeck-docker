@@ -1,6 +1,6 @@
 {
     "Name": "elgato-docker",
-    "Version": "1.1.0",
+    "Version": "1.2.0",
     "Author": "@Darkdragon14",
     "Actions": [
         {
@@ -9,6 +9,35 @@
             "Icon": "imgs/actions/docker/icon",
             "Tooltip": "Toggle container status between running and stopped.",
             "PropertyInspectorPath": "ui/docker/docker-start.html",
+            "Controllers": [
+                "Keypad"
+            ],
+            "States": [
+                {
+                    "Image": "imgs/actions/docker-running/key",
+                    "TitleAlignment": "middle",
+                    "FontSize": 9
+                },
+                {
+                    "Image": "imgs/actions/docker-stopped/key",
+                    "TitleAlignment": "middle",
+                    "FontSize": 9
+                },
+                {
+                    "Image": "imgs/actions/error/key",
+                    "TitleAlignment": "middle",
+                    "FontSize": 9,
+                    "Title": "Please,\nlaunch\nDocker"
+                }
+            ],
+            "UserTitleEnabled": false
+        },
+        {
+            "Name": "Stack start/stop",
+            "UUID": "com.darkdragon14.elgato-docker.docker-stack-start",
+            "Icon": "imgs/actions/docker/icon",
+            "Tooltip": "Toggle an entire Compose stack.",
+            "PropertyInspectorPath": "ui/docker/docker-stack-start.html",
             "Controllers": [
                 "Keypad"
             ],

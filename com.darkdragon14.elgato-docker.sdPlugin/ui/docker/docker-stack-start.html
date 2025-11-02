@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+	<head lang="en">
+		<title>Docker Stack Start/Stop Settings</title>
+		<meta charset="utf-8" />
+		<script src="https://sdpi-components.dev/releases/v3/sdpi-components.js"></script>
+	</head>
+
+	<body>
+		<sdpi-item label="Stack">
+			<sdpi-select
+				setting="stackName"
+				placeholder="Select a stack"
+				datasource="getStacks"
+				loading="Fetching stacks..."
+				hot-reload
+			>
+			</sdpi-select>
+		</sdpi-item>
+		<sdpi-heading>Notes</sdpi-heading>
+		<sdpi-description>
+			This lists Compose projects detected from container labels (com.docker.compose.project).
+		</sdpi-description>
+	</body>
+</html>
