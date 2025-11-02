@@ -6,6 +6,7 @@ import { ContainersCount } from "./actions/containers-count";
 import { DockerRunOrRm } from "./actions/docker-run-or-rm";
 import { DockerSelectToggle } from "./actions/docker-select-toggle";
 import { DockerStart } from "./actions/docker-start";
+import { DockerStackStart } from "./actions/docker-stack-start";
 
 const socketPath = os.platform() === "win32" ? "//./pipe/docker_engine" : "/var/run/docker.sock";
 const docker = new Docker({ socketPath });
@@ -16,6 +17,7 @@ streamDeck.logger.setLevel(LogLevel.TRACE);
 // Register the increment action.
 streamDeck.actions.registerAction(new DockerRunOrRm(docker));
 streamDeck.actions.registerAction(new DockerStart(docker));
+streamDeck.actions.registerAction(new DockerStackStart(docker));
 streamDeck.actions.registerAction(new ContainersCount(docker));
 streamDeck.actions.registerAction(new DockerSelectToggle(docker));
 
