@@ -7,6 +7,17 @@
 	</head>
 
 	<body>
+		<sdpi-heading>Connection</sdpi-heading>
+		<sdpi-item label="Context">
+			<sdpi-select
+				setting="contextName"
+				placeholder="Use Global / Local / Context"
+				datasource="getDockerContexts"
+				loading="Fetching contexts..."
+				hot-reload
+			>
+			</sdpi-select>
+		</sdpi-item>
 		<sdpi-item label="Images">
 			<sdpi-select
 				setting="imageName"

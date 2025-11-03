@@ -5,12 +5,12 @@ import streamDeck, {
 	SingletonAction,
 	WillAppearEvent,
 } from "@elgato/streamdeck";
-import { Docker } from "node-docker-api";
 
 import { CONTAINER_STATUS_RUNNING, DOCKER_START_ERROR_STATE } from "../constants/docker";
-import { getContainer } from "../utils/getContainer";
-import { isContainerRunning } from "../utils/getContainerRunning";
 import { pingDockerForDials } from "../utils/pingDocker";
+import { getEffectiveContext } from "../utils/getEffectiveContext";
+import { listContainers as listContainersCli, getContainerState, startContainer, stopContainer, waitContainer } from "../utils/dockerCli";
+// Note: Docker Context support for dial action can be added similarly if desired.
 
 /**
  * Settings for {@link DockerSelectToggle}.
@@ -18,6 +18,7 @@ import { pingDockerForDials } from "../utils/pingDocker";
 type DockerSelectToggleSettings = {
 	containerName?: string;
 	status?: string;
+    contextName?: string;
 };
 
 interface DockerContainerData {
@@ -30,26 +31,23 @@ export class DockerSelectToggle extends SingletonAction<DockerSelectToggleSettin
 	private containers: DockerContainerData[] = [];
 	private currentIndex: number = 0;
 	private updateInterval: NodeJS.Timeout | undefined;
-	private docker: Docker;
 
-	constructor(docker: Docker) {
-		super();
-		this.docker = docker;
-	}
+	constructor() { super(); }
 
 	/**
 	 * Occurs when the action will appear.
 	 */
 	override async onWillAppear(ev: WillAppearEvent<DockerSelectToggleSettings>): Promise<void> {
 		if (ev.action.isDial()) {
-			const dockerIsUp = await pingDockerForDials(this.docker, ev, DOCKER_START_ERROR_STATE);
+			const context = await getEffectiveContext(ev.payload.settings as any);
+			const dockerIsUp = await pingDockerForDials(ev, DOCKER_START_ERROR_STATE, context);
 			if (dockerIsUp) {
-				await this.updateContainersList();
+				await this.updateContainersList(context);
 				this.updateContainerName(ev);
 			}
 
 			this.updateInterval = setInterval(async () => {
-				await this.updateContainerState(ev, this.containers[this.currentIndex]?.Names[0].slice(1));
+				await this.updateContainerState(ev, this.containers[this.currentIndex]?.Names?.[0]?.slice(1), context);
 			}, 1000);
 		}
 	}
@@ -70,28 +68,28 @@ export class DockerSelectToggle extends SingletonAction<DockerSelectToggleSettin
 	 * Occurs when the dial is pressed.
 	 */
 	override async onDialDown(ev: DialDownEvent<DockerSelectToggleSettings>): Promise<void> {
-		const dockerIsUp = await pingDockerForDials(this.docker, ev, DOCKER_START_ERROR_STATE);
+		const context = await getEffectiveContext(ev.payload.settings as any);
+		const dockerIsUp = await pingDockerForDials(ev, DOCKER_START_ERROR_STATE, context);
 		if (!dockerIsUp) return;
 
-		const containerName = this.containers[this.currentIndex].Names[0].slice(1);
-		const container = await getContainer(this.docker, containerName);
-		if (!container) return;
+		const containerName = this.containers[this.currentIndex].Names?.[0]?.slice(1);
+		if (!containerName) return;
 
-		const data = container.data as DockerContainerData;
-		if (data.State === CONTAINER_STATUS_RUNNING) {
-			await container.stop();
-			await container.wait();
+		const state = await getContainerState(containerName, context);
+		if (state === CONTAINER_STATUS_RUNNING) {
+			await stopContainer(containerName, context);
+			await waitContainer(containerName, context);
 		} else {
-			await container.start();
+			await startContainer(containerName, context);
 		}
 		this.updateInterval = setInterval(async () => {
-			await this.updateContainerState(ev, containerName);
+			await this.updateContainerState(ev, containerName, context);
 		}, 1000);
 	}
 
-	private async updateContainersList(): Promise<void> {
-		const containers = await this.docker.container.list({ all: true });
-		this.containers = containers.map((c) => c.data as DockerContainerData);
+	private async updateContainersList(context?: string): Promise<void> {
+		const items = await listContainersCli(true, context);
+		this.containers = items.map((it: any) => ({ Names: ["/" + it.name], State: it.state } as any));
 	}
 
 	private updateContainerName(
@@ -101,19 +99,19 @@ export class DockerSelectToggle extends SingletonAction<DockerSelectToggleSettin
 		ev.action.setTitle(containerName);
 	}
 
-	private async updateContainerState(ev: any, containerName: String) {
+	private async updateContainerState(ev: any, containerName: String, context?: string) {
 		streamDeck.logger.info("Updating container state for " + containerName);
-		const dockerIsUp = await pingDockerForDials(this.docker, ev, DOCKER_START_ERROR_STATE);
+		const dockerIsUp = await pingDockerForDials(ev, DOCKER_START_ERROR_STATE, context);
 		if (!dockerIsUp) return;
 
 		if (this.containers.length === 0) {
-			await this.updateContainersList();
+			await this.updateContainersList(context);
 			this.updateContainerName(ev);
-			containerName = this.containers[this.currentIndex]?.Names[0].slice(1);
+			containerName = this.containers[this.currentIndex]?.Names?.[0]?.slice(1);
 		}
 
-		const running = await isContainerRunning(this.docker, containerName);
-		const newState = running ? "imgs/actions/docker-running/key" : "imgs/actions/docker-stopped/key";
+		const state = await getContainerState(containerName.toString(), context);
+		const newState = state === CONTAINER_STATUS_RUNNING ? "imgs/actions/docker-running/key" : "imgs/actions/docker-stopped/key";
 		ev.action.setFeedback({
 			icon: newState,
 		});
