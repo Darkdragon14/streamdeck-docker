@@ -10,16 +10,22 @@ import streamDeck, {
 } from "@elgato/streamdeck";
 
 import { CONTAINER_STATUS_RUNNING, DOCKER_START_ERROR_STATE } from "../constants/docker";
-import { pingDocker } from "../utils/pingDocker";
-import { getEffectiveContext } from "../utils/getEffectiveContext";
-import { listDockerContexts } from "../utils/dockerContext";
-import { listComposeProjects, containersByComposeProject, startContainer, stopContainer, waitContainer } from "../utils/dockerCli";
 import { subscribeContextHealth, unsubscribeContextHealth } from "../utils/contextHealth";
+import {
+	containersByComposeProject,
+	listComposeProjects,
+	startContainer,
+	stopContainer,
+	waitContainer,
+} from "../utils/dockerCli";
+import { listDockerContexts } from "../utils/dockerContext";
+import { getEffectiveContext } from "../utils/getEffectiveContext";
+import { pingDocker } from "../utils/pingDocker";
 
 type DockerStackStartSettings = {
 	stackName?: string;
 	remoteHost?: string;
-    contextName?: string;
+	contextName?: string;
 };
 
 interface DockerContainerData {}
@@ -28,29 +34,29 @@ interface DockerContainerData {}
 export class DockerStackStart extends SingletonAction<DockerStackStartSettings> {
 	private updateIntervals: Map<string, NodeJS.Timeout> = new Map();
 	private currentStackNameByContext: Map<string, string | undefined> = new Map();
-    private lastSettingsByContext: Map<string, DockerStackStartSettings> = new Map();
+	private lastSettingsByContext: Map<string, DockerStackStartSettings> = new Map();
 
 	override async onWillAppear(ev: WillAppearEvent<DockerStackStartSettings>): Promise<void> {
-        const instanceId = (ev.action as any).id || (ev as any).context;
-        this.lastSettingsByContext.set(instanceId, ev.payload.settings || {});
+		const instanceId = (ev.action as any).id || (ev as any).context;
+		this.lastSettingsByContext.set(instanceId, ev.payload.settings || {});
 		const context = await getEffectiveContext(ev.payload.settings as DockerStackStartSettings);
-        const dockerIsUp = await pingDocker(ev, DOCKER_START_ERROR_STATE, context);
-        if (!dockerIsUp) {
-            this.startUpdateLoop(ev, context);
-            return;
-        }
-        // subscribe to health changes
-        subscribeContextHealth(context, instanceId, (up) => {
-            if (!up) {
-                if (ev.action.isKey()) ev.action.setState(DOCKER_START_ERROR_STATE);
-                ev.action.setTitle("Please, launch Docker");
-            } else {
-                this.updateStackState(ev, context);
-            }
-        });
+		const dockerIsUp = await pingDocker(ev, DOCKER_START_ERROR_STATE, context);
+		if (!dockerIsUp) {
+			this.startUpdateLoop(ev, context);
+			return;
+		}
+		// subscribe to health changes
+		subscribeContextHealth(context, instanceId, (up) => {
+			if (!up) {
+				if (ev.action.isKey()) ev.action.setState(DOCKER_START_ERROR_STATE);
+				ev.action.setTitle("Please, launch Docker");
+			} else {
+				this.updateStackState(ev, context);
+			}
+		});
 
 		const { stackName } = ev.payload.settings;
-        this.currentStackNameByContext.set(instanceId, stackName);
+		this.currentStackNameByContext.set(instanceId, stackName);
 		if (stackName) {
 			ev.action.setTitle(this.formatTitle(stackName));
 		}
@@ -59,18 +65,18 @@ export class DockerStackStart extends SingletonAction<DockerStackStartSettings> 
 		this.startUpdateLoop(ev, context);
 	}
 
-    override onWillDisappear(ev: WillDisappearEvent<DockerStackStartSettings>): void {
-        const instanceId = (ev.action as any).id || (ev as any).context;
-        this.clearIntervalFor(instanceId);
-        const context = (this.lastSettingsByContext.get(instanceId) || {}).contextName;
-        unsubscribeContextHealth(context === "default" ? undefined : context, instanceId);
-    }
+	override onWillDisappear(ev: WillDisappearEvent<DockerStackStartSettings>): void {
+		const instanceId = (ev.action as any).id || (ev as any).context;
+		this.clearIntervalFor(instanceId);
+		const context = (this.lastSettingsByContext.get(instanceId) || {}).contextName;
+		unsubscribeContextHealth(context === "default" ? undefined : context, instanceId);
+	}
 
 	override async onSendToPlugin(ev: SendToPluginEvent<JsonObject, DockerStackStartSettings>): Promise<void> {
 		if (ev.payload.event === "getStacks") {
-            const instanceId = (ev.action as any).id || (ev as any).context;
-            const previous = this.lastSettingsByContext.get(instanceId) || {};
-            const effective = { ...previous, ...(ev.payload.settings as DockerStackStartSettings) };
+			const instanceId = (ev.action as any).id || (ev as any).context;
+			const previous = this.lastSettingsByContext.get(instanceId) || {};
+			const effective = { ...previous, ...(ev.payload.settings as DockerStackStartSettings) };
 			const context = await getEffectiveContext(effective);
 			const stacks = await this.listComposeStacks(context);
 			const items = stacks.map((name) => ({ label: name, value: name }));
@@ -87,32 +93,35 @@ export class DockerStackStart extends SingletonAction<DockerStackStartSettings> 
 	}
 
 	override onDidReceiveSettings(ev: DidReceiveSettingsEvent<DockerStackStartSettings>): void {
-        const { stackName } = ev.payload.settings || {};
-        const instanceId = (ev.action as any).id || (ev as any).context;
-        this.currentStackNameByContext.set(instanceId, stackName);
-        this.lastSettingsByContext.set(instanceId, ev.payload.settings || {});
+		const { stackName } = ev.payload.settings || {};
+		const instanceId = (ev.action as any).id || (ev as any).context;
+		this.currentStackNameByContext.set(instanceId, stackName);
+		this.lastSettingsByContext.set(instanceId, ev.payload.settings || {});
 		ev.action.setTitle(this.formatTitle(stackName || "No\nStack"));
 		// Refresh stacks in PI to reflect context change
 		(async () => {
-            const ctx = await getEffectiveContext(this.lastSettingsByContext.get(instanceId));
+			const ctx = await getEffectiveContext(this.lastSettingsByContext.get(instanceId));
 			const stacks = await this.listComposeStacks(ctx);
-			streamDeck.ui.current?.sendToPropertyInspector({ event: "getStacks", items: stacks.map((n) => ({ label: n, value: n })) });
+			streamDeck.ui.current?.sendToPropertyInspector({
+				event: "getStacks",
+				items: stacks.map((n) => ({ label: n, value: n })),
+			});
 		})();
 		// Immediate refresh
-        getEffectiveContext(this.lastSettingsByContext.get(instanceId)).then((ctx) => {
-            this.updateStackState(ev as any, ctx);
-            this.clearIntervalFor(instanceId);
-            this.startUpdateLoop(ev as any, ctx);
-        });
+		getEffectiveContext(this.lastSettingsByContext.get(instanceId)).then((ctx) => {
+			this.updateStackState(ev as any, ctx);
+			this.clearIntervalFor(instanceId);
+			this.startUpdateLoop(ev as any, ctx);
+		});
 	}
 
-override async onKeyDown(ev: KeyDownEvent<DockerStackStartSettings>): Promise<void> {
+	override async onKeyDown(ev: KeyDownEvent<DockerStackStartSettings>): Promise<void> {
 		const context = await getEffectiveContext(ev.payload.settings as DockerStackStartSettings);
 		const dockerIsUp = await pingDocker(ev, DOCKER_START_ERROR_STATE, context);
 		if (!dockerIsUp) return;
 
-        const instanceId = (ev.action as any).id || (ev as any).context;
-        const stackName = this.currentStackNameByContext.get(instanceId);
+		const instanceId = (ev.action as any).id || (ev as any).context;
+		const stackName = this.currentStackNameByContext.get(instanceId);
 		if (!stackName) {
 			streamDeck.logger.error("No stack selected.");
 			return;
@@ -148,19 +157,21 @@ override async onKeyDown(ev: KeyDownEvent<DockerStackStartSettings>): Promise<vo
 		}
 	}
 
-    private startUpdateLoop(ev: any, context?: string) {
-        const instanceId2 = (ev.action as any).id || (ev as any).context;
-        this.clearIntervalFor(instanceId2);
-        const handle = setInterval(async () => { await this.updateStackState(ev, context); }, 1000);
-        this.updateIntervals.set(instanceId2, handle as any);
-    }
+	private startUpdateLoop(ev: any, context?: string) {
+		const instanceId2 = (ev.action as any).id || (ev as any).context;
+		this.clearIntervalFor(instanceId2);
+		const handle = setInterval(async () => {
+			await this.updateStackState(ev, context);
+		}, 1000);
+		this.updateIntervals.set(instanceId2, handle as any);
+	}
 
-    private async updateStackState(ev: any, context?: string): Promise<void> {
-        const dockerIsUp = await pingDocker(ev, DOCKER_START_ERROR_STATE, context);
-        if (!dockerIsUp) return;
+	private async updateStackState(ev: any, context?: string): Promise<void> {
+		const dockerIsUp = await pingDocker(ev, DOCKER_START_ERROR_STATE, context);
+		if (!dockerIsUp) return;
 
-        const instanceId = (ev.action as any).id || (ev as any).context;
-        const stackName = this.currentStackNameByContext.get(instanceId);
+		const instanceId = (ev.action as any).id || (ev as any).context;
+		const stackName = this.currentStackNameByContext.get(instanceId);
 		if (!stackName) {
 			ev.action.setTitle("No\nStack");
 			ev.action.setState(1);

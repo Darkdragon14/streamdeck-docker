@@ -11,23 +11,23 @@ import { ping as pingCli } from "./dockerCli";
  * @throws {Error} - Propagates any unexpected errors during the ping process.
  */
 export async function pingDocker(ev: any, state: number, context?: string): Promise<boolean> {
-    try {
-        const ok = await pingCli(context);
-        if (ok) return true;
-    } catch {}
-    ev.action.setState(state);
-    (ev.action || ev).setTitle(DOCKER_NOT_RUNNING_TITLE);
-    return false;
+	try {
+		const ok = await pingCli(context);
+		if (ok) return true;
+	} catch {}
+	ev.action.setState(state);
+	(ev.action || ev).setTitle(DOCKER_NOT_RUNNING_TITLE);
+	return false;
 }
 
 export async function pingDockerForDials(ev: any, state: number, context?: string): Promise<boolean> {
-    try {
-        const ok = await pingCli(context);
-        if (ok) return true;
-    } catch {}
-    ev.action.setFeedback({
-        icon: "imgs/actions/error/key",
-        title: DOCKER_NOT_RUNNING_TITLE_FOR_DIALS,
-    });
-    return false;
+	try {
+		const ok = await pingCli(context);
+		if (ok) return true;
+	} catch {}
+	ev.action.setFeedback({
+		icon: "imgs/actions/error/key",
+		title: DOCKER_NOT_RUNNING_TITLE_FOR_DIALS,
+	});
+	return false;
 }

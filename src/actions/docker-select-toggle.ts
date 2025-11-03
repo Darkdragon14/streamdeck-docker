@@ -7,9 +7,16 @@ import streamDeck, {
 } from "@elgato/streamdeck";
 
 import { CONTAINER_STATUS_RUNNING, DOCKER_START_ERROR_STATE } from "../constants/docker";
-import { pingDockerForDials } from "../utils/pingDocker";
+import {
+	getContainerState,
+	listContainers as listContainersCli,
+	startContainer,
+	stopContainer,
+	waitContainer,
+} from "../utils/dockerCli";
 import { getEffectiveContext } from "../utils/getEffectiveContext";
-import { listContainers as listContainersCli, getContainerState, startContainer, stopContainer, waitContainer } from "../utils/dockerCli";
+import { pingDockerForDials } from "../utils/pingDocker";
+
 // Note: Docker Context support for dial action can be added similarly if desired.
 
 /**
@@ -18,7 +25,7 @@ import { listContainers as listContainersCli, getContainerState, startContainer,
 type DockerSelectToggleSettings = {
 	containerName?: string;
 	status?: string;
-    contextName?: string;
+	contextName?: string;
 };
 
 interface DockerContainerData {
@@ -32,7 +39,9 @@ export class DockerSelectToggle extends SingletonAction<DockerSelectToggleSettin
 	private currentIndex: number = 0;
 	private updateInterval: NodeJS.Timeout | undefined;
 
-	constructor() { super(); }
+	constructor() {
+		super();
+	}
 
 	/**
 	 * Occurs when the action will appear.
@@ -89,7 +98,7 @@ export class DockerSelectToggle extends SingletonAction<DockerSelectToggleSettin
 
 	private async updateContainersList(context?: string): Promise<void> {
 		const items = await listContainersCli(true, context);
-		this.containers = items.map((it: any) => ({ Names: ["/" + it.name], State: it.state } as any));
+		this.containers = items.map((it: any) => ({ Names: ["/" + it.name], State: it.state }) as any);
 	}
 
 	private updateContainerName(
@@ -111,7 +120,8 @@ export class DockerSelectToggle extends SingletonAction<DockerSelectToggleSettin
 		}
 
 		const state = await getContainerState(containerName.toString(), context);
-		const newState = state === CONTAINER_STATUS_RUNNING ? "imgs/actions/docker-running/key" : "imgs/actions/docker-stopped/key";
+		const newState =
+			state === CONTAINER_STATUS_RUNNING ? "imgs/actions/docker-running/key" : "imgs/actions/docker-stopped/key";
 		ev.action.setFeedback({
 			icon: newState,
 		});

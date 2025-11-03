@@ -9,19 +9,19 @@ import streamDeck, {
 } from "@elgato/streamdeck";
 
 import { CONTAINER_COUNT_ERROR_STATE, CONTAINER_LIST_ALL_STATUS } from "../constants/docker";
-import { pingDocker } from "../utils/pingDocker";
-import { getEffectiveContext } from "../utils/getEffectiveContext";
-import { listDockerContexts } from "../utils/dockerContext";
-import { listContainers } from "../utils/dockerCli";
 import { subscribeContextHealth, unsubscribeContextHealth } from "../utils/contextHealth";
+import { listContainers } from "../utils/dockerCli";
+import { listDockerContexts } from "../utils/dockerContext";
+import { getEffectiveContext } from "../utils/getEffectiveContext";
+import { pingDocker } from "../utils/pingDocker";
 
 /**
  * Settings for {@link containersList}.
  */
 type ContainersListSettings = {
 	status?: string;
-    remoteHost?: string;
-    contextName?: string;
+	remoteHost?: string;
+	contextName?: string;
 };
 
 type ContainerListOptions = {
@@ -31,10 +31,12 @@ type ContainerListOptions = {
 
 @action({ UUID: "com.darkdragon14.elgato-docker.containers-count" })
 export class ContainersCount extends SingletonAction<ContainersListSettings> {
-    private updateIntervals: Map<string, NodeJS.Timeout> = new Map();
-    private lastSettingsByContext: Map<string, ContainersListSettings> = new Map();
+	private updateIntervals: Map<string, NodeJS.Timeout> = new Map();
+	private lastSettingsByContext: Map<string, ContainersListSettings> = new Map();
 
-    constructor() { super(); }
+	constructor() {
+		super();
+	}
 
 	override async onSendToPlugin(ev: SendToPluginEvent<JsonObject, ContainersListSettings>): Promise<void> {
 		if (ev.payload.event === "getDockerContexts") {
@@ -47,57 +49,57 @@ export class ContainersCount extends SingletonAction<ContainersListSettings> {
 		streamDeck.connect();
 	}
 
-    override async onWillAppear(ev: WillAppearEvent<ContainersListSettings>): Promise<void> {
-        const instanceId = (ev.action as any).id || (ev as any).context;
-        this.lastSettingsByContext.set(instanceId, ev.payload.settings || {});
-        let { status }: ContainersListSettings = ev.payload.settings;
+	override async onWillAppear(ev: WillAppearEvent<ContainersListSettings>): Promise<void> {
+		const instanceId = (ev.action as any).id || (ev as any).context;
+		this.lastSettingsByContext.set(instanceId, ev.payload.settings || {});
+		let { status }: ContainersListSettings = ev.payload.settings;
 
 		if (!status) {
 			status = CONTAINER_LIST_ALL_STATUS;
 		}
 
-        const ctx = await getEffectiveContext(ev.payload.settings as any);
-        subscribeContextHealth(ctx, instanceId, (up) => {
-            if (!up) {
-                ev.action.setTitle("Please, launch Docker");
-                if (ev.action.isKey()) ev.action.setState(CONTAINER_COUNT_ERROR_STATE);
-            } else {
-                const cur = (this.lastSettingsByContext.get(instanceId) || {}).status || CONTAINER_LIST_ALL_STATUS;
-                this.updateContainersList(ev, cur);
-            }
-        });
-        this.updateContainersList(ev, status);
-        this.setIntervalFor(instanceId, () => {
-            const cur = (this.lastSettingsByContext.get(instanceId) || {}).status || CONTAINER_LIST_ALL_STATUS;
-            return this.updateContainersList(ev, cur);
-        });
-    }
+		const ctx = await getEffectiveContext(ev.payload.settings as any);
+		subscribeContextHealth(ctx, instanceId, (up) => {
+			if (!up) {
+				ev.action.setTitle("Please, launch Docker");
+				if (ev.action.isKey()) ev.action.setState(CONTAINER_COUNT_ERROR_STATE);
+			} else {
+				const cur = (this.lastSettingsByContext.get(instanceId) || {}).status || CONTAINER_LIST_ALL_STATUS;
+				this.updateContainersList(ev, cur);
+			}
+		});
+		this.updateContainersList(ev, status);
+		this.setIntervalFor(instanceId, () => {
+			const cur = (this.lastSettingsByContext.get(instanceId) || {}).status || CONTAINER_LIST_ALL_STATUS;
+			return this.updateContainersList(ev, cur);
+		});
+	}
 
-    override onWillDisappear(ev: WillDisappearEvent<ContainersListSettings>): void {
-        const instanceId = (ev.action as any).id || (ev as any).context;
-        this.clearIntervalFor(instanceId);
-        const context = (this.lastSettingsByContext.get(instanceId) || {}).contextName;
-        unsubscribeContextHealth(context === "default" ? undefined : context, instanceId);
-    }
+	override onWillDisappear(ev: WillDisappearEvent<ContainersListSettings>): void {
+		const instanceId = (ev.action as any).id || (ev as any).context;
+		this.clearIntervalFor(instanceId);
+		const context = (this.lastSettingsByContext.get(instanceId) || {}).contextName;
+		unsubscribeContextHealth(context === "default" ? undefined : context, instanceId);
+	}
 
-    override onDidReceiveSettings(ev: DidReceiveSettingsEvent<ContainersListSettings>): void {
-        const instanceId = (ev.action as any).id || (ev as any).context;
-        this.clearIntervalFor(instanceId);
-        const status = ev.payload?.settings?.status || CONTAINER_LIST_ALL_STATUS;
-        this.lastSettingsByContext.set(instanceId, ev.payload.settings || {});
-        this.updateContainersList(ev, status);
-        // Interval reads latest status dynamically
-        this.setIntervalFor(instanceId, () => {
-            const cur = (this.lastSettingsByContext.get(instanceId) || {}).status || CONTAINER_LIST_ALL_STATUS;
-            return this.updateContainersList(ev, cur);
-        });
-    }
+	override onDidReceiveSettings(ev: DidReceiveSettingsEvent<ContainersListSettings>): void {
+		const instanceId = (ev.action as any).id || (ev as any).context;
+		this.clearIntervalFor(instanceId);
+		const status = ev.payload?.settings?.status || CONTAINER_LIST_ALL_STATUS;
+		this.lastSettingsByContext.set(instanceId, ev.payload.settings || {});
+		this.updateContainersList(ev, status);
+		// Interval reads latest status dynamically
+		this.setIntervalFor(instanceId, () => {
+			const cur = (this.lastSettingsByContext.get(instanceId) || {}).status || CONTAINER_LIST_ALL_STATUS;
+			return this.updateContainersList(ev, cur);
+		});
+	}
 
 	private async updateContainersList(ev: any, status: string) {
-        const instanceId = (ev.action as any).id || (ev as any).context;
-        const previous = this.lastSettingsByContext.get(instanceId) || {};
-        const effective = { ...previous, ...(ev.payload.settings as ContainersListSettings) };
-        const context = await getEffectiveContext(effective);
+		const instanceId = (ev.action as any).id || (ev as any).context;
+		const previous = this.lastSettingsByContext.get(instanceId) || {};
+		const effective = { ...previous, ...(ev.payload.settings as ContainersListSettings) };
+		const context = await getEffectiveContext(effective);
 		const dockerIsUp = await pingDocker(ev, CONTAINER_COUNT_ERROR_STATE, context);
 		if (!dockerIsUp) {
 			return;
@@ -119,18 +121,20 @@ export class ContainersCount extends SingletonAction<ContainersListSettings> {
 		ev.action.setTitle(title);
 	}
 
-    private setIntervalFor(id: string, fn: () => Promise<void>) {
-        const h = this.updateIntervals.get(id);
-        if (h) clearInterval(h);
-        const handle = setInterval(async () => { await fn(); }, 1000);
-        this.updateIntervals.set(id, handle as any);
-    }
+	private setIntervalFor(id: string, fn: () => Promise<void>) {
+		const h = this.updateIntervals.get(id);
+		if (h) clearInterval(h);
+		const handle = setInterval(async () => {
+			await fn();
+		}, 1000);
+		this.updateIntervals.set(id, handle as any);
+	}
 
-    private clearIntervalFor(id: string) {
-        const h = this.updateIntervals.get(id);
-        if (h) {
-            clearInterval(h);
-            this.updateIntervals.delete(id);
-        }
-    }
+	private clearIntervalFor(id: string) {
+		const h = this.updateIntervals.get(id);
+		if (h) {
+			clearInterval(h);
+			this.updateIntervals.delete(id);
+		}
+	}
 }
