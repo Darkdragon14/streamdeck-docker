@@ -40,8 +40,18 @@ export class DockerStackStart extends SingletonAction<DockerStackStartSettings> 
 		const instanceId = (ev.action as any).id || (ev as any).context;
 		this.lastSettingsByContext.set(instanceId, ev.payload.settings || {});
 		const context = await getEffectiveContext(ev.payload.settings as DockerStackStartSettings);
+
+		// Always record/display the selected stack name, even if Docker is down
+		const { stackName } = ev.payload.settings;
+		this.currentStackNameByContext.set(instanceId, stackName);
+		if (stackName) {
+			ev.action.setTitle(this.formatTitle(stackName));
+		}
+
 		const dockerIsUp = await pingDocker(ev, DOCKER_START_ERROR_STATE, context);
 		if (!dockerIsUp) {
+			// Start polling so that when Docker starts, the state refreshes and
+			// uses the previously remembered stack name instead of showing "No Stack".
 			this.startUpdateLoop(ev, context);
 			return;
 		}
@@ -55,11 +65,7 @@ export class DockerStackStart extends SingletonAction<DockerStackStartSettings> 
 			}
 		});
 
-		const { stackName } = ev.payload.settings;
-		this.currentStackNameByContext.set(instanceId, stackName);
-		if (stackName) {
-			ev.action.setTitle(this.formatTitle(stackName));
-		}
+		// stackName already recorded above; keep UI in sync if provided
 
 		await this.updateStackState(ev, context);
 		this.startUpdateLoop(ev, context);
