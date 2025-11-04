@@ -10,9 +10,16 @@ import streamDeck, {
 } from "@elgato/streamdeck";
 
 import { CONTAINER_STATUS_RUNNING, DOCKER_START_ERROR_STATE } from "../constants/docker";
+import { getContainersSnapshot, subscribeContainers, unsubscribeContainers } from "../utils/containerStore";
 import { subscribeContextHealth, unsubscribeContextHealth } from "../utils/contextHealth";
-import { getContainerState, listContainers, startContainer, stopContainer, waitContainer, scaleSwarmService } from "../utils/dockerCli";
-import { subscribeContainers, unsubscribeContainers, getContainersSnapshot } from "../utils/containerStore";
+import {
+	getContainerState,
+	listContainers,
+	scaleSwarmService,
+	startContainer,
+	stopContainer,
+	waitContainer,
+} from "../utils/dockerCli";
 import { listDockerContexts } from "../utils/dockerContext";
 import { getEffectiveContext } from "../utils/getEffectiveContext";
 import { pingDocker } from "../utils/pingDocker";
@@ -169,7 +176,7 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 				await stopContainer(containerName, context);
 				await waitContainer(containerName, context);
 			} catch (e: any) {
-				streamDeck.logger.error(`Error stopping ${containerName} in ctx=${context || 'default'}: ${e?.message || e}`);
+				streamDeck.logger.error(`Error stopping ${containerName} in ctx=${context || "default"}: ${e?.message || e}`);
 			}
 		} else {
 			try {
@@ -183,7 +190,7 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 					await startContainer(containerName, context);
 				}
 			} catch (e: any) {
-				streamDeck.logger.error(`Error starting ${containerName} in ctx=${context || 'default'}: ${e?.message || e}`);
+				streamDeck.logger.error(`Error starting ${containerName} in ctx=${context || "default"}: ${e?.message || e}`);
 			}
 		}
 

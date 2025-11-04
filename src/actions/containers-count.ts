@@ -9,9 +9,9 @@ import streamDeck, {
 } from "@elgato/streamdeck";
 
 import { CONTAINER_COUNT_ERROR_STATE, CONTAINER_LIST_ALL_STATUS } from "../constants/docker";
+import { getContainersSnapshot, subscribeContainers, unsubscribeContainers } from "../utils/containerStore";
 import { subscribeContextHealth, unsubscribeContextHealth } from "../utils/contextHealth";
 import { listContainers } from "../utils/dockerCli";
-import { subscribeContainers, unsubscribeContainers, getContainersSnapshot } from "../utils/containerStore";
 import { listDockerContexts } from "../utils/dockerContext";
 import { getEffectiveContext } from "../utils/getEffectiveContext";
 import { pingDocker } from "../utils/pingDocker";

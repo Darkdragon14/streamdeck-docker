@@ -13,13 +13,13 @@ import { CONTAINER_STATUS_RUNNING, DOCKER_START_ERROR_STATE } from "../constants
 import { subscribeContextHealth, unsubscribeContextHealth } from "../utils/contextHealth";
 import {
 	containersByComposeProject,
+	isSwarmStack,
 	listComposeProjects,
+	listSwarmServicesInStack,
+	scaleSwarmService,
 	startContainer,
 	stopContainer,
 	waitContainer,
-	isSwarmStack,
-	listSwarmServicesInStack,
-	scaleSwarmService,
 } from "../utils/dockerCli";
 import { listDockerContexts } from "../utils/dockerContext";
 import { getEffectiveContext } from "../utils/getEffectiveContext";
@@ -41,10 +41,10 @@ export class DockerStackStart extends SingletonAction<DockerStackStartSettings> 
 
 	// Prevent overlapping async updates and reduce flicker by only applying changes
 	private updatingByContext: Map<string, boolean> = new Map();
-    private lastStateByContext: Map<string, number | undefined> = new Map();
-    private lastTitleByContext: Map<string, string | undefined> = new Map();
-    // For Swarm stacks, remember desired replicas per service when scaling down
-    private swarmDesiredByInstance: Map<string, Record<string, number>> = new Map();
+	private lastStateByContext: Map<string, number | undefined> = new Map();
+	private lastTitleByContext: Map<string, string | undefined> = new Map();
+	// For Swarm stacks, remember desired replicas per service when scaling down
+	private swarmDesiredByInstance: Map<string, Record<string, number>> = new Map();
 
 	override async onWillAppear(ev: WillAppearEvent<DockerStackStartSettings>): Promise<void> {
 		const instanceId = (ev.action as any).id || (ev as any).context;
@@ -185,7 +185,8 @@ export class DockerStackStart extends SingletonAction<DockerStackStartSettings> 
 				const services = await listSwarmServicesInStack(stackName, context);
 				for (const s of services) {
 					if (s.mode?.toLowerCase() === "global") continue;
-					const target = remembered[s.name] ?? (Number.isFinite(s.replicasDesired as any) ? (s.replicasDesired as number) : 1);
+					const target =
+						remembered[s.name] ?? (Number.isFinite(s.replicasDesired as any) ? (s.replicasDesired as number) : 1);
 					try {
 						await scaleSwarmService(s.name, Math.max(1, target), context);
 					} catch (e: any) {
@@ -233,7 +234,7 @@ export class DockerStackStart extends SingletonAction<DockerStackStartSettings> 
 		if (this.updatingByContext.get(instanceId)) return;
 		this.updatingByContext.set(instanceId, true);
 		try {
-		const dockerIsUp = await pingDocker(ev, DOCKER_START_ERROR_STATE, context);
+			const dockerIsUp = await pingDocker(ev, DOCKER_START_ERROR_STATE, context);
 			if (!dockerIsUp) {
 				// When Docker is down, remember last applied state to avoid oscillation
 				this.lastStateByContext.set(instanceId, DOCKER_START_ERROR_STATE);

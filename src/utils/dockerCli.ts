@@ -33,67 +33,70 @@ function releaseGlobal() {
 type Priority = "normal" | "high" | "urgent";
 type QueueTask<T> = { fn: () => Promise<T>; resolve: (v: T) => void; reject: (e: any) => void; priority: Priority };
 
-const ctxQueues = new Map<string, { running: boolean; qUrg: QueueTask<unknown>[]; qHigh: QueueTask<unknown>[]; qNorm: QueueTask<unknown>[] }>();
+const ctxQueues = new Map<
+	string,
+	{ running: boolean; qUrg: QueueTask<unknown>[]; qHigh: QueueTask<unknown>[]; qNorm: QueueTask<unknown>[] }
+>();
 
 async function runNextInContext(ctxKey: string): Promise<void> {
-    const state = ctxQueues.get(ctxKey);
-    if (!state) return;
-    if (state.running) return;
-    const next =
-        state.qUrg.length > 0
-            ? state.qUrg.shift()
-            : state.qHigh.length > 0
-            ? state.qHigh.shift()
-            : state.qNorm.shift();
-    if (!next) return; // nothing to run
-    state.running = true;
-    await acquireGlobal();
-    try {
-        const res = await next.fn();
-        (next.resolve as (v: unknown) => void)(res);
-    } catch (e) {
-        next.reject(e);
-    } finally {
-        releaseGlobal();
-        state.running = false;
-        // Schedule the next one if any
-        if (state.qHigh.length > 0 || state.qNorm.length > 0) {
-            // fire and forget to avoid stack buildup
-            setImmediate(() => {
-                runNextInContext(ctxKey).catch(() => undefined);
-            });
-        }
-    }
+	const state = ctxQueues.get(ctxKey);
+	if (!state) return;
+	if (state.running) return;
+	const next =
+		state.qUrg.length > 0 ? state.qUrg.shift() : state.qHigh.length > 0 ? state.qHigh.shift() : state.qNorm.shift();
+	if (!next) return; // nothing to run
+	state.running = true;
+	await acquireGlobal();
+	try {
+		const res = await next.fn();
+		(next.resolve as (v: unknown) => void)(res);
+	} catch (e) {
+		next.reject(e);
+	} finally {
+		releaseGlobal();
+		state.running = false;
+		// Schedule the next one if any
+		if (state.qHigh.length > 0 || state.qNorm.length > 0) {
+			// fire and forget to avoid stack buildup
+			setImmediate(() => {
+				runNextInContext(ctxKey).catch(() => undefined);
+			});
+		}
+	}
 }
 
 function scheduleInContext<T>(contextKey: string, task: () => Promise<T>, priority: Priority): Promise<T> {
-    let state = ctxQueues.get(contextKey);
-    if (!state) {
-        state = { running: false, qUrg: [], qHigh: [], qNorm: [] };
-        ctxQueues.set(contextKey, state);
-    }
-    return new Promise<T>((resolve, reject) => {
-        const entry: QueueTask<T> = { fn: task, resolve, reject, priority };
-        if (priority === "urgent") state!.qUrg.push(entry as unknown as QueueTask<unknown>);
-        else if (priority === "high") state!.qHigh.push(entry as unknown as QueueTask<unknown>);
-        else state!.qNorm.push(entry as unknown as QueueTask<unknown>);
-        // Attempt to run if idle
-        setImmediate(() => {
-            runNextInContext(contextKey).catch(() => undefined);
-        });
-    });
+	let state = ctxQueues.get(contextKey);
+	if (!state) {
+		state = { running: false, qUrg: [], qHigh: [], qNorm: [] };
+		ctxQueues.set(contextKey, state);
+	}
+	return new Promise<T>((resolve, reject) => {
+		const entry: QueueTask<T> = { fn: task, resolve, reject, priority };
+		if (priority === "urgent") state!.qUrg.push(entry as unknown as QueueTask<unknown>);
+		else if (priority === "high") state!.qHigh.push(entry as unknown as QueueTask<unknown>);
+		else state!.qNorm.push(entry as unknown as QueueTask<unknown>);
+		// Attempt to run if idle
+		setImmediate(() => {
+			runNextInContext(contextKey).catch(() => undefined);
+		});
+	});
 }
 
 export async function runDocker(args: string[], context?: string, opts?: { priority?: Priority }) {
-    const finalArgs = [] as string[];
-    if (context && context !== "") finalArgs.push("--context", context);
-    finalArgs.push(...args);
-    const ctxKey = context && context !== "" ? context : "<default>";
-    const priority = opts?.priority ?? "normal";
-    return scheduleInContext(ctxKey, async () => {
-        const { stdout } = await execFile("docker", finalArgs);
-        return stdout;
-    }, priority);
+	const finalArgs = [] as string[];
+	if (context && context !== "") finalArgs.push("--context", context);
+	finalArgs.push(...args);
+	const ctxKey = context && context !== "" ? context : "<default>";
+	const priority = opts?.priority ?? "normal";
+	return scheduleInContext(
+		ctxKey,
+		async () => {
+			const { stdout } = await execFile("docker", finalArgs);
+			return stdout;
+		},
+		priority,
+	);
 }
 
 // Lightweight cache to avoid spamming `docker version` across many keys
@@ -105,14 +108,14 @@ export async function ping(context?: string): Promise<boolean> {
 	const now = Date.now();
 	const cached = pingCache.get(key);
 	if (cached && now - cached.ts < PING_TTL_MS) return cached.ok;
-    try {
-        await runDocker(["version"], context, { priority: "normal" });
-        pingCache.set(key, { ok: true, ts: now });
-        return true;
-    } catch {
-        pingCache.set(key, { ok: false, ts: now });
-        return false;
-    }
+	try {
+		await runDocker(["version"], context, { priority: "normal" });
+		pingCache.set(key, { ok: true, ts: now });
+		return true;
+	} catch {
+		pingCache.set(key, { ok: false, ts: now });
+		return false;
+	}
 }
 
 export type PsItem = { name: string; state: string; labels?: Record<string, string> };
@@ -122,7 +125,7 @@ export async function listContainers(all: boolean, context?: string, filters: st
 	const args = ["ps", all ? "-a" : "", ...filters.flatMap((f) => ["--filter", f]), "--format", format].filter(
 		Boolean,
 	) as string[];
-    const out = await runDocker(args, context, { priority: "high" });
+	const out = await runDocker(args, context, { priority: "high" });
 	const items: PsItem[] = [];
 	for (const line of out.split(/\r?\n/)) {
 		if (!line.trim()) continue;
@@ -140,7 +143,7 @@ export async function listContainers(all: boolean, context?: string, filters: st
 
 export async function getContainerState(name: string, context?: string): Promise<string | undefined> {
 	try {
-        const out = await runDocker(["inspect", "-f", "{{.State.Status}}", name], context, { priority: "normal" });
+		const out = await runDocker(["inspect", "-f", "{{.State.Status}}", name], context, { priority: "normal" });
 		return out.trim();
 	} catch {
 		return undefined;

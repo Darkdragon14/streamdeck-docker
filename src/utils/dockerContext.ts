@@ -1,22 +1,23 @@
-import { runDocker } from "./dockerCli";
 import { readFile } from "fs/promises";
 import * as path from "path";
+
+import { runDocker } from "./dockerCli";
 
 export type DockerContextInfo = {
 	name: string;
 };
 
 export async function listDockerContexts(): Promise<DockerContextInfo[]> {
-    try {
+	try {
 		const stdout = await runDocker(["context", "ls", "--format", "{{.Name}}"], undefined, { priority: "high" });
 		const names = stdout
 			.split(/\r?\n/)
 			.map((s) => s.trim())
 			.filter(Boolean);
 		return names.map((name) => ({ name }));
-    } catch {
-        return [];
-    }
+	} catch {
+		return [];
+	}
 }
 
 export type ResolvedDockerContext = {
