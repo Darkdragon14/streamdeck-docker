@@ -1,6 +1,4 @@
 import streamDeck, { LogLevel } from "@elgato/streamdeck";
-import { Docker } from "node-docker-api";
-import * as os from "os";
 
 import { ContainersCount } from "./actions/containers-count";
 import { DockerRunOrRm } from "./actions/docker-run-or-rm";
@@ -8,18 +6,15 @@ import { DockerSelectToggle } from "./actions/docker-select-toggle";
 import { DockerStackStart } from "./actions/docker-stack-start";
 import { DockerStart } from "./actions/docker-start";
 
-const socketPath = os.platform() === "win32" ? "//./pipe/docker_engine" : "/var/run/docker.sock";
-const docker = new Docker({ socketPath });
-
 // We can enable "trace" logging so that all messages between the Stream Deck, and the plugin are recorded. When storing sensitive information
 streamDeck.logger.setLevel(LogLevel.TRACE);
 
 // Register the increment action.
-streamDeck.actions.registerAction(new DockerRunOrRm(docker));
-streamDeck.actions.registerAction(new DockerStart(docker));
-streamDeck.actions.registerAction(new DockerStackStart(docker));
-streamDeck.actions.registerAction(new ContainersCount(docker));
-streamDeck.actions.registerAction(new DockerSelectToggle(docker));
+streamDeck.actions.registerAction(new DockerRunOrRm());
+streamDeck.actions.registerAction(new DockerStart());
+streamDeck.actions.registerAction(new DockerStackStart());
+streamDeck.actions.registerAction(new ContainersCount());
+streamDeck.actions.registerAction(new DockerSelectToggle());
 
 // Finally, connect to the Stream Deck.
 streamDeck.connect();

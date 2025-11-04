@@ -1,6 +1,5 @@
-import { Docker } from "node-docker-api";
-
 import { DOCKER_NOT_RUNNING_TITLE, DOCKER_NOT_RUNNING_TITLE_FOR_DIALS } from "../constants/docker";
+import { ping as pingCli } from "./dockerCli";
 
 /**
  * Pings the Docker daemon to check if it is reachable.
@@ -11,26 +10,24 @@ import { DOCKER_NOT_RUNNING_TITLE, DOCKER_NOT_RUNNING_TITLE_FOR_DIALS } from "..
  * @returns {Promise<boolean>} - Resolves to `true` if the ping succeeds, `false` otherwise.
  * @throws {Error} - Propagates any unexpected errors during the ping process.
  */
-export async function pingDocker(docker: Docker, ev: any, state: number): Promise<boolean> {
+export async function pingDocker(ev: any, state: number, context?: string): Promise<boolean> {
 	try {
-		await docker.ping();
-		return true;
-	} catch (error) {
-		ev.action.setState(state);
-		(ev.action || ev).setTitle(DOCKER_NOT_RUNNING_TITLE);
-		return false;
-	}
+		const ok = await pingCli(context);
+		if (ok) return true;
+	} catch {}
+	ev.action.setState(state);
+	(ev.action || ev).setTitle(DOCKER_NOT_RUNNING_TITLE);
+	return false;
 }
 
-export async function pingDockerForDials(docker: Docker, ev: any, state: number): Promise<boolean> {
+export async function pingDockerForDials(ev: any, state: number, context?: string): Promise<boolean> {
 	try {
-		await docker.ping();
-		return true;
-	} catch (error) {
-		ev.action.setFeedback({
-			icon: "imgs/actions/error/key",
-			title: DOCKER_NOT_RUNNING_TITLE_FOR_DIALS,
-		});
-		return false;
-	}
+		const ok = await pingCli(context);
+		if (ok) return true;
+	} catch {}
+	ev.action.setFeedback({
+		icon: "imgs/actions/error/key",
+		title: DOCKER_NOT_RUNNING_TITLE_FOR_DIALS,
+	});
+	return false;
 }

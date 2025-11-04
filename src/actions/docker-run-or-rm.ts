@@ -8,10 +8,12 @@ import streamDeck, {
 	WillAppearEvent,
 	WillDisappearEvent,
 } from "@elgato/streamdeck";
-import { Docker } from "node-docker-api";
 
 import { DOCKER_START_ERROR_STATE } from "../constants/docker";
-import { getContainer } from "../utils/getContainer";
+import { subscribeContextHealth, unsubscribeContextHealth } from "../utils/contextHealth";
+import { getContainerState, listImages, removeContainer, runDetached } from "../utils/dockerCli";
+import { listDockerContexts } from "../utils/dockerContext";
+import { getEffectiveContext } from "../utils/getEffectiveContext";
 import { pingDocker } from "../utils/pingDocker";
 
 /**
@@ -21,57 +23,60 @@ type DockerRunOrRmSettings = {
 	containerName?: string;
 	imageName?: string;
 	status?: string;
+	remoteHost?: string;
+	contextName?: string;
 };
 
-interface DockerImageData {
-	RepoTags: string[];
-}
-
-interface DockerContainerData {
-	Names: string[];
-	State: string;
-}
+interface DockerImageData {}
+interface DockerContainerData {}
 
 @action({ UUID: "com.darkdragon14.elgato-docker.docker-run-or-rm" })
 export class DockerRunOrRm extends SingletonAction<DockerRunOrRmSettings> {
-	private updateInterval: NodeJS.Timeout | undefined;
-	private docker: Docker;
-
-	constructor(docker: Docker) {
-		super();
-		this.docker = docker;
-	}
+	private updateIntervals: Map<string, NodeJS.Timeout> = new Map();
+	private lastSettingsByContext: Map<string, DockerRunOrRmSettings> = new Map();
 
 	override async onWillAppear(ev: WillAppearEvent<DockerRunOrRmSettings>): Promise<void> {
+		const instanceId = (ev.action as any).id || (ev as any).context;
+		this.lastSettingsByContext.set(instanceId, ev.payload.settings || {});
+		const context = await getEffectiveContext(ev.payload.settings as DockerRunOrRmSettings);
+		subscribeContextHealth(context, instanceId, (up) => {
+			if (!up) {
+				ev.action.setTitle("Please, launch Docker");
+				if (ev.action.isKey()) ev.action.setState(DOCKER_START_ERROR_STATE);
+			} else {
+				this.updateDockerState(ev);
+			}
+		});
 		this.updateDockerState(ev);
-		this.updateInterval = setInterval(async () => {
-			await this.updateDockerState(ev);
-		}, 1000);
+		this.setIntervalFor(instanceId, () => this.updateDockerState(ev));
 	}
 
-	override onWillDisappear(_ev: WillDisappearEvent<DockerRunOrRmSettings>): void {
-		if (this.updateInterval) {
-			clearInterval(this.updateInterval);
-			this.updateInterval = undefined;
-		}
+	override onWillDisappear(ev: WillDisappearEvent<DockerRunOrRmSettings>): void {
+		const instanceId = (ev.action as any).id || (ev as any).context;
+		this.clearIntervalFor(instanceId);
+		const context = (this.lastSettingsByContext.get(instanceId) || {}).contextName;
+		unsubscribeContextHealth(context === "default" ? undefined : context, instanceId);
 	}
 
 	override async onSendToPlugin(ev: SendToPluginEvent<JsonObject, DockerRunOrRmSettings>): Promise<void> {
 		if (ev.payload.event == "getImages") {
-			const images = await this.docker.image.list({ all: true });
-			streamDeck.logger.debug(images);
-			const imageNames = images.map((c) => {
-				const data = c.data as DockerImageData;
-				const name = data.RepoTags[0];
-				return {
-					label: name,
-					value: name,
-				};
-			});
+			const instanceId = (ev.action as any).id || (ev as any).context;
+			const previous = this.lastSettingsByContext.get(instanceId) || {};
+			const effective = { ...previous, ...(ev.payload.settings as DockerRunOrRmSettings) };
+			const context = await getEffectiveContext(effective);
+			const images = await listImages(context);
+			const imageNames = images.map((name) => ({ label: name, value: name }));
 			streamDeck.ui.current?.sendToPropertyInspector({
 				event: "getImages",
 				items: imageNames,
 			});
+		}
+		if (ev.payload.event === "getDockerContexts") {
+			const contexts = await listDockerContexts();
+			const items = [
+				...contexts.map((c) => ({ label: c.name, value: c.name })),
+			];
+			streamDeck.ui.current?.sendToPropertyInspector({ event: "getDockerContexts", items });
 		}
 		streamDeck.connect();
 	}
@@ -88,16 +93,12 @@ export class DockerRunOrRm extends SingletonAction<DockerRunOrRmSettings> {
 		}
 
 		try {
-			const container = await getContainer(this.docker, containerName.toString());
-
-			if (container) {
-				await container.delete({ force: true });
+			const context = await getEffectiveContext(ev.payload.settings as DockerRunOrRmSettings);
+			const state = await getContainerState(containerName.toString(), context);
+			if (state) {
+				await removeContainer(String(containerName), context);
 			} else {
-				const container = await this.docker.container.create({
-					Image: imageName,
-					name: containerName,
-				});
-				await container.start();
+				await runDetached(String(imageName), String(containerName), context);
 			}
 		} catch (error: any) {
 			streamDeck.logger.error(`Error handling container: ${error.message}`);
@@ -105,12 +106,34 @@ export class DockerRunOrRm extends SingletonAction<DockerRunOrRmSettings> {
 	}
 
 	private async updateDockerState(ev: any) {
-		const dockerIsUp = await pingDocker(this.docker, ev, DOCKER_START_ERROR_STATE);
+		const context = await getEffectiveContext(ev.payload.settings as DockerRunOrRmSettings);
+		const dockerIsUp = await pingDocker(ev, DOCKER_START_ERROR_STATE, context);
 		if (!dockerIsUp) {
 			return;
 		}
-		const container = await getContainer(this.docker, ev.payload.settings.containerName);
-		const state = container ? 0 : 1;
+		const st = await getContainerState(ev.payload.settings.containerName, context);
+		const state = st ? 0 : 1;
 		ev.action.setState(state);
+	}
+
+	override onDidReceiveSettings(ev: DidReceiveSettingsEvent<DockerRunOrRmSettings>): void {
+		this.lastSettingsByContext.set((ev as any).context, ev.payload?.settings || {});
+	}
+
+	private setIntervalFor(id: string, fn: () => Promise<void>) {
+		const h = this.updateIntervals.get(id);
+		if (h) clearInterval(h);
+		const handle = setInterval(async () => {
+			await fn();
+		}, 1000);
+		this.updateIntervals.set(id, handle as any);
+	}
+
+	private clearIntervalFor(id: string) {
+		const h = this.updateIntervals.get(id);
+		if (h) {
+			clearInterval(h);
+			this.updateIntervals.delete(id);
+		}
 	}
 }

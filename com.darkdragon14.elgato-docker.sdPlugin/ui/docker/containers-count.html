@@ -7,6 +7,17 @@
 	</head>
 
 	<body>
+		<sdpi-heading>Connection</sdpi-heading>
+		<sdpi-item label="Context">
+			<sdpi-select
+				setting="contextName"
+				placeholder="Select Context"
+				datasource="getDockerContexts"
+				loading="Fetching contexts..."
+				hot-reload
+			>
+			</sdpi-select>
+		</sdpi-item>
 		<sdpi-item label="Status">
 			<sdpi-select setting="status" placeholder="Select a status">
 				<option value="all">All</option>

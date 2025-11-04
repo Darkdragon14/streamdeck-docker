@@ -19,8 +19,7 @@
         "typescript": "^5.2.2"
     },
     "dependencies": {
-        "@elgato/streamdeck": "^1.0.0",
-        "node-docker-api": "^1.1.22"
+        "@elgato/streamdeck": "^1.0.0"
     },
     "prettier": "@elgato/prettier-config"
 }

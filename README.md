@@ -11,6 +11,8 @@ A powerful plugin for Elgato Stream Deck that allows you to manage Docker contai
 - Display Container Status: Show the current state (e.g., running, stopped) directly on your Stream Deck keys.
 - User-Friendly: Integrates seamlessly with the Stream Deck interface for effortless container management.
 - Multi-Container Support: Handles multiple Docker containers simultaneously.
+- Start/Stop stack/compose: Control the lifecycle of Docker containers with a single key press.
+- Docker Contexts: Select a Docker Context per key. TLS certificates are handled by the Docker Context.
 
 ## Future improvements
 
@@ -58,9 +60,11 @@ Double-click it to install the plugin in the Stream Deck software.
 ## Usage
 
 - Open the Stream Deck software.
-- Drag the Docker Control action to a key on your Stream Deck.
-- Configure the container name in the action's settings.
-- Press the key to start stop, or check the status of the container.
+- Drag a Docker action to a key.
+- Optional: set the `Remote (optional)` field to target a remote Docker (leave empty for local; ensures backward compatibility).
+- Preferred: pick a `Context` per key. Select `default (local)` to use the local Docker; choose a named Docker Context to target a remote.
+- Configure the action-specific fields (container, stack, image, etc.).
+- Press the key to start/stop or query status.
 
 ## Development
 
@@ -86,5 +90,3 @@ This project is licensed under the MIT License. See the [LICENSE](https://github
 ## Acknowledgments
 
 Thanks to [Elgato](https://www.elgato.com/) for providing the Stream Deck platform.
-
-Built with [node-docker-api](https://www.npmjs.com/package/node-docker-api) for Docker integration.
