@@ -11,7 +11,8 @@ import streamDeck, {
 
 import { CONTAINER_STATUS_RUNNING, DOCKER_START_ERROR_STATE } from "../constants/docker";
 import { subscribeContextHealth, unsubscribeContextHealth } from "../utils/contextHealth";
-import { getContainerState, listContainers, startContainer, stopContainer, waitContainer } from "../utils/dockerCli";
+import { getContainerState, listContainers, startContainer, stopContainer, waitContainer, scaleSwarmService } from "../utils/dockerCli";
+import { subscribeContainers, unsubscribeContainers, getContainersSnapshot } from "../utils/containerStore";
 import { listDockerContexts } from "../utils/dockerContext";
 import { getEffectiveContext } from "../utils/getEffectiveContext";
 import { pingDocker } from "../utils/pingDocker";
@@ -52,6 +53,18 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 				if (cn) this.updateContainerState(ev, cn, context);
 			}
 		});
+
+		// subscribe to container updates for this context
+		subscribeContainers(context, instanceId, (map) => {
+			const cn = (this.lastSettingsByContext.get(instanceId) || {}).containerName || "";
+			if (!cn) return;
+			const it = map.get(cn);
+			if (it) {
+				const newState = it.state === CONTAINER_STATUS_RUNNING ? 0 : 1;
+				ev.action.setTitle(this.formatTitle(cn));
+				if (ev.action.isKey()) ev.action.setState(newState);
+			}
+		});
 		if (!dockerIsUp) {
 			this.setIntervalFor((ev as any).context, () => this.updateContainerState(ev, containerName!, context));
 			return;
@@ -77,6 +90,7 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 		this.clearIntervalFor(instanceId);
 		const context = (this.lastSettingsByContext.get(instanceId) || {}).contextName;
 		unsubscribeContextHealth(context === "default" ? undefined : context, instanceId);
+		unsubscribeContainers(context === "default" ? undefined : context, instanceId);
 	}
 
 	override async onSendToPlugin(ev: SendToPluginEvent<JsonObject, DockerStartSettings>): Promise<void> {
@@ -113,6 +127,7 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 			getEffectiveContext(this.lastSettingsByContext.get(instanceId)).then((ctx) => {
 				this.updateContainerState(ev, containerName!, ctx);
 				this.clearIntervalFor(instanceId);
+				// reduce polling since we have a central store
 				this.setIntervalFor(instanceId, () => this.updateContainerState(ev, containerName!, ctx));
 			});
 		}
@@ -150,10 +165,26 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 		}
 
 		if (state === CONTAINER_STATUS_RUNNING) {
-			await stopContainer(containerName, context);
-			await waitContainer(containerName, context);
+			try {
+				await stopContainer(containerName, context);
+				await waitContainer(containerName, context);
+			} catch (e: any) {
+				streamDeck.logger.error(`Error stopping ${containerName} in ctx=${context || 'default'}: ${e?.message || e}`);
+			}
 		} else {
-			await startContainer(containerName, context);
+			try {
+				// If this is a Swarm task, prefer scaling the service up instead of container start
+				const snap = getContainersSnapshot(context);
+				const labels = snap?.get(containerName)?.labels || {};
+				const swarmServiceName = (labels as any)["com.docker.swarm.service.name"] as string | undefined;
+				if (swarmServiceName) {
+					await scaleSwarmService(swarmServiceName, 1, context);
+				} else {
+					await startContainer(containerName, context);
+				}
+			} catch (e: any) {
+				streamDeck.logger.error(`Error starting ${containerName} in ctx=${context || 'default'}: ${e?.message || e}`);
+			}
 		}
 
 		this.setIntervalFor(instanceId, () => this.updateContainerState(ev, containerName!, context));
@@ -166,9 +197,14 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 		}
 
 		ev.action.setTitle(this.formatTitle(containerName));
-		const st = await getContainerState(containerName.toString(), context);
+		// Try store snapshot first to avoid CLI call per key
+		const snap = getContainersSnapshot(context);
+		let st: string | undefined = snap?.get(containerName.toString())?.state;
+		if (!st) {
+			st = await getContainerState(containerName.toString(), context);
+		}
 		const newState = st === CONTAINER_STATUS_RUNNING ? 0 : 1;
-		ev.action.setState(newState);
+		if (ev.action.isKey()) ev.action.setState(newState);
 	}
 
 	private formatTitle(title: String) {

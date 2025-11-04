@@ -11,6 +11,7 @@ import streamDeck, {
 import { CONTAINER_COUNT_ERROR_STATE, CONTAINER_LIST_ALL_STATUS } from "../constants/docker";
 import { subscribeContextHealth, unsubscribeContextHealth } from "../utils/contextHealth";
 import { listContainers } from "../utils/dockerCli";
+import { subscribeContainers, unsubscribeContainers, getContainersSnapshot } from "../utils/containerStore";
 import { listDockerContexts } from "../utils/dockerContext";
 import { getEffectiveContext } from "../utils/getEffectiveContext";
 import { pingDocker } from "../utils/pingDocker";
@@ -68,6 +69,12 @@ export class ContainersCount extends SingletonAction<ContainersListSettings> {
 				this.updateContainersList(ev, cur);
 			}
 		});
+
+		// Subscribe to central container store for this context
+		subscribeContainers(ctx, instanceId, () => {
+			const cur = (this.lastSettingsByContext.get(instanceId) || {}).status || CONTAINER_LIST_ALL_STATUS;
+			this.updateContainersList(ev, cur);
+		});
 		this.updateContainersList(ev, status);
 		this.setIntervalFor(instanceId, () => {
 			const cur = (this.lastSettingsByContext.get(instanceId) || {}).status || CONTAINER_LIST_ALL_STATUS;
@@ -80,6 +87,7 @@ export class ContainersCount extends SingletonAction<ContainersListSettings> {
 		this.clearIntervalFor(instanceId);
 		const context = (this.lastSettingsByContext.get(instanceId) || {}).contextName;
 		unsubscribeContextHealth(context === "default" ? undefined : context, instanceId);
+		unsubscribeContainers(context === "default" ? undefined : context, instanceId);
 	}
 
 	override onDidReceiveSettings(ev: DidReceiveSettingsEvent<ContainersListSettings>): void {
@@ -112,11 +120,23 @@ export class ContainersCount extends SingletonAction<ContainersListSettings> {
 		} else {
 			options.status = status;
 		}
-		const filters: string[] = [];
-		if (options.status) filters.push(`status=${options.status}`);
-		const containers = await listContainers(!!options.all, context, filters);
+		// Prefer snapshot from central store; fallback to direct CLI if not ready
+		let count = 0;
+		const snap = getContainersSnapshot(context);
+		if (snap && snap.size >= 0) {
+			if (options.all) {
+				count = snap.size;
+			} else if (options.status) {
+				for (const [, it] of snap) if (it.state === options.status) count++;
+			}
+		} else {
+			const filters: string[] = [];
+			if (options.status) filters.push(`status=${options.status}`);
+			const containers = await listContainers(!!options.all, context, filters);
+			count = containers.length;
+		}
 
-		const title = `${status}\n${containers.length}`;
+		const title = `${status}\n${count}`;
 
 		ev.action.setTitle(title);
 	}

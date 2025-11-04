@@ -17,6 +17,9 @@ import {
 	startContainer,
 	stopContainer,
 	waitContainer,
+	isSwarmStack,
+	listSwarmServicesInStack,
+	scaleSwarmService,
 } from "../utils/dockerCli";
 import { listDockerContexts } from "../utils/dockerContext";
 import { getEffectiveContext } from "../utils/getEffectiveContext";
@@ -35,6 +38,13 @@ export class DockerStackStart extends SingletonAction<DockerStackStartSettings> 
 	private updateIntervals: Map<string, NodeJS.Timeout> = new Map();
 	private currentStackNameByContext: Map<string, string | undefined> = new Map();
 	private lastSettingsByContext: Map<string, DockerStackStartSettings> = new Map();
+
+	// Prevent overlapping async updates and reduce flicker by only applying changes
+	private updatingByContext: Map<string, boolean> = new Map();
+    private lastStateByContext: Map<string, number | undefined> = new Map();
+    private lastTitleByContext: Map<string, string | undefined> = new Map();
+    // For Swarm stacks, remember desired replicas per service when scaling down
+    private swarmDesiredByInstance: Map<string, Record<string, number>> = new Map();
 
 	override async onWillAppear(ev: WillAppearEvent<DockerStackStartSettings>): Promise<void> {
 		const instanceId = (ev.action as any).id || (ev as any).context;
@@ -74,6 +84,9 @@ export class DockerStackStart extends SingletonAction<DockerStackStartSettings> 
 	override onWillDisappear(ev: WillDisappearEvent<DockerStackStartSettings>): void {
 		const instanceId = (ev.action as any).id || (ev as any).context;
 		this.clearIntervalFor(instanceId);
+		this.lastStateByContext.delete(instanceId);
+		this.lastTitleByContext.delete(instanceId);
+		this.updatingByContext.delete(instanceId);
 		const context = (this.lastSettingsByContext.get(instanceId) || {}).contextName;
 		unsubscribeContextHealth(context === "default" ? undefined : context, instanceId);
 	}
@@ -134,30 +147,73 @@ export class DockerStackStart extends SingletonAction<DockerStackStartSettings> 
 		}
 
 		const containers = await containersByComposeProject(stackName, context);
-		if (containers.length === 0) {
+		let swarm = false;
+		// If no containers, still check if it's a swarm stack (scaled to 0)
+		try {
+			swarm = await isSwarmStack(stackName, context);
+		} catch {}
+
+		if (!swarm && containers.length === 0) {
 			ev.action.setTitle("Not\nFound");
 			return;
 		}
 
-		const allRunning = containers.every((c) => c.state === CONTAINER_STATUS_RUNNING);
-
-		if (allRunning) {
-			for (const c of containers) {
-				try {
-					await stopContainer(c.name, context).catch(() => {});
-					await waitContainer(c.name, context).catch(() => {});
-				} catch (e: any) {
-					streamDeck.logger.warn(`Failed stopping container: ${e?.message || e}`);
+		if (swarm) {
+			// Toggle by scaling services
+			const running = containers.some((c) => c.state === CONTAINER_STATUS_RUNNING);
+			if (running) {
+				// Scale all services to 0 and remember desired replicas
+				const services = await listSwarmServicesInStack(stackName, context);
+				const desired: Record<string, number> = {};
+				for (const s of services) {
+					if (s.mode?.toLowerCase() === "global") {
+						streamDeck.logger.warn(`Global service ${s.name} cannot be scaled; skipping.`);
+						continue;
+					}
+					const target = Number.isFinite(s.replicasDesired as any) ? (s.replicasDesired as number) : 1;
+					desired[s.name] = target;
+					try {
+						await scaleSwarmService(s.name, 0, context);
+					} catch (e: any) {
+						streamDeck.logger.warn(`Failed scaling service ${s.name} to 0: ${e?.message || e}`);
+					}
+				}
+				this.swarmDesiredByInstance.set(instanceId, desired);
+			} else {
+				// Scale back to previous desired replicas (default 1)
+				const remembered = this.swarmDesiredByInstance.get(instanceId) || {};
+				const services = await listSwarmServicesInStack(stackName, context);
+				for (const s of services) {
+					if (s.mode?.toLowerCase() === "global") continue;
+					const target = remembered[s.name] ?? (Number.isFinite(s.replicasDesired as any) ? (s.replicasDesired as number) : 1);
+					try {
+						await scaleSwarmService(s.name, Math.max(1, target), context);
+					} catch (e: any) {
+						streamDeck.logger.warn(`Failed scaling service ${s.name}: ${e?.message || e}`);
+					}
 				}
 			}
 		} else {
-			for (const c of containers) {
-				try {
-					if (c.state !== CONTAINER_STATUS_RUNNING) {
-						await startContainer(c.name, context).catch(() => {});
+			// Compose-style: start/stop each container
+			const allRunning = containers.every((c) => c.state === CONTAINER_STATUS_RUNNING);
+			if (allRunning) {
+				for (const c of containers) {
+					try {
+						await stopContainer(c.name, context).catch(() => {});
+						await waitContainer(c.name, context).catch(() => {});
+					} catch (e: any) {
+						streamDeck.logger.warn(`Failed stopping container: ${e?.message || e}`);
 					}
-				} catch (e: any) {
-					streamDeck.logger.warn(`Failed starting container: ${e?.message || e}`);
+				}
+			} else {
+				for (const c of containers) {
+					try {
+						if (c.state !== CONTAINER_STATUS_RUNNING) {
+							await startContainer(c.name, context).catch(() => {});
+						}
+					} catch (e: any) {
+						streamDeck.logger.warn(`Failed starting container: ${e?.message || e}`);
+					}
 				}
 			}
 		}
@@ -173,28 +229,47 @@ export class DockerStackStart extends SingletonAction<DockerStackStartSettings> 
 	}
 
 	private async updateStackState(ev: any, context?: string): Promise<void> {
-		const dockerIsUp = await pingDocker(ev, DOCKER_START_ERROR_STATE, context);
-		if (!dockerIsUp) return;
-
 		const instanceId = (ev.action as any).id || (ev as any).context;
-		const stackName = this.currentStackNameByContext.get(instanceId);
-		if (!stackName) {
-			ev.action.setTitle("No\nStack");
-			ev.action.setState(1);
-			return;
-		}
+		if (this.updatingByContext.get(instanceId)) return;
+		this.updatingByContext.set(instanceId, true);
+		try {
+		const dockerIsUp = await pingDocker(ev, DOCKER_START_ERROR_STATE, context);
+			if (!dockerIsUp) {
+				// When Docker is down, remember last applied state to avoid oscillation
+				this.lastStateByContext.set(instanceId, DOCKER_START_ERROR_STATE);
+				this.lastTitleByContext.set(instanceId, undefined);
+				return;
+			}
 
-		const containers = await containersByComposeProject(stackName, context);
-		if (containers.length === 0) {
-			ev.action.setTitle("Not\nFound");
-			ev.action.setState(1);
-			return;
-		}
+			const stackName = this.currentStackNameByContext.get(instanceId);
+			if (!stackName) {
+				this.applyIfChanged(ev, instanceId, "No\nStack", 1);
+				return;
+			}
 
-		const running = containers.filter((c) => c.state === CONTAINER_STATUS_RUNNING).length;
-		const allRunning = running === containers.length;
-		ev.action.setTitle(this.formatTitle(stackName));
-		ev.action.setState(allRunning ? 0 : 1);
+			const containers = await containersByComposeProject(stackName, context);
+			let swarm = false;
+			try {
+				swarm = await isSwarmStack(stackName, context);
+			} catch {}
+
+			let title = this.formatTitle(stackName);
+			if (swarm) {
+				// For swarm stacks, existence is based on services, not containers
+				const running = containers.filter((c) => c.state === CONTAINER_STATUS_RUNNING).length;
+				this.applyIfChanged(ev, instanceId, title, running > 0 ? 0 : 1);
+			} else {
+				if (containers.length === 0) {
+					this.applyIfChanged(ev, instanceId, "Not\nFound", 1);
+					return;
+				}
+				const running = containers.filter((c) => c.state === CONTAINER_STATUS_RUNNING).length;
+				const allRunning = running === containers.length;
+				this.applyIfChanged(ev, instanceId, title, allRunning ? 0 : 1);
+			}
+		} finally {
+			this.updatingByContext.delete(instanceId);
+		}
 	}
 
 	private async listComposeStacks(context?: string): Promise<string[]> {
@@ -211,5 +286,18 @@ export class DockerStackStart extends SingletonAction<DockerStackStartSettings> 
 
 	private formatTitle(title: string) {
 		return title.split("-").join("\n");
+	}
+
+	private applyIfChanged(ev: any, id: string, title: string, state: number) {
+		const prevTitle = this.lastTitleByContext.get(id);
+		const prevState = this.lastStateByContext.get(id);
+		if (prevTitle !== title) {
+			ev.action.setTitle(title);
+			this.lastTitleByContext.set(id, title);
+		}
+		if (prevState !== state) {
+			ev.action.setState(state);
+			this.lastStateByContext.set(id, state);
+		}
 	}
 }
