@@ -9,7 +9,9 @@ import streamDeck, {
 } from "@elgato/streamdeck";
 
 import { CONTAINER_COUNT_ERROR_STATE, CONTAINER_LIST_ALL_STATUS } from "../constants/docker";
+import { getContainersSnapshot, subscribeContainers, unsubscribeContainers } from "../utils/containerStore";
 import { subscribeContextHealth, unsubscribeContextHealth } from "../utils/contextHealth";
+import { getDockerContextsSnapshot } from "../utils/contextsStore";
 import { listContainers } from "../utils/dockerCli";
 import { listDockerContexts } from "../utils/dockerContext";
 import { getEffectiveContext } from "../utils/getEffectiveContext";
@@ -40,10 +42,10 @@ export class ContainersCount extends SingletonAction<ContainersListSettings> {
 
 	override async onSendToPlugin(ev: SendToPluginEvent<JsonObject, ContainersListSettings>): Promise<void> {
 		if (ev.payload.event === "getDockerContexts") {
-			const contexts = await listDockerContexts();
-			const items = [
-				...contexts.map((c) => ({ label: c.name, value: c.name })),
-			];
+			const snap = getDockerContextsSnapshot();
+			const items = snap
+				? Array.from(snap.values()).map((c) => ({ label: c.name, value: c.name }))
+				: (await listDockerContexts()).map((c) => ({ label: c.name, value: c.name }));
 			streamDeck.ui.current?.sendToPropertyInspector({ event: "getDockerContexts", items });
 		}
 		streamDeck.connect();
@@ -68,6 +70,12 @@ export class ContainersCount extends SingletonAction<ContainersListSettings> {
 				this.updateContainersList(ev, cur);
 			}
 		});
+
+		// Subscribe to central container store for this context
+		subscribeContainers(ctx, instanceId, () => {
+			const cur = (this.lastSettingsByContext.get(instanceId) || {}).status || CONTAINER_LIST_ALL_STATUS;
+			this.updateContainersList(ev, cur);
+		});
 		this.updateContainersList(ev, status);
 		this.setIntervalFor(instanceId, () => {
 			const cur = (this.lastSettingsByContext.get(instanceId) || {}).status || CONTAINER_LIST_ALL_STATUS;
@@ -80,6 +88,7 @@ export class ContainersCount extends SingletonAction<ContainersListSettings> {
 		this.clearIntervalFor(instanceId);
 		const context = (this.lastSettingsByContext.get(instanceId) || {}).contextName;
 		unsubscribeContextHealth(context === "default" ? undefined : context, instanceId);
+		unsubscribeContainers(context === "default" ? undefined : context, instanceId);
 	}
 
 	override onDidReceiveSettings(ev: DidReceiveSettingsEvent<ContainersListSettings>): void {
@@ -112,11 +121,23 @@ export class ContainersCount extends SingletonAction<ContainersListSettings> {
 		} else {
 			options.status = status;
 		}
-		const filters: string[] = [];
-		if (options.status) filters.push(`status=${options.status}`);
-		const containers = await listContainers(!!options.all, context, filters);
+		// Prefer snapshot from central store; fallback to direct CLI if not ready
+		let count = 0;
+		const snap = getContainersSnapshot(context);
+		if (snap && snap.size >= 0) {
+			if (options.all) {
+				count = snap.size;
+			} else if (options.status) {
+				for (const [, it] of snap) if (it.state === options.status) count++;
+			}
+		} else {
+			const filters: string[] = [];
+			if (options.status) filters.push(`status=${options.status}`);
+			const containers = await listContainers(!!options.all, context, filters);
+			count = containers.length;
+		}
 
-		const title = `${status}\n${containers.length}`;
+		const title = `${status}\n${count}`;
 
 		ev.action.setTitle(title);
 	}

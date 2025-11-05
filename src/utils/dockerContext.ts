@@ -1,9 +1,7 @@
-import { exec as cpExec } from "child_process";
 import { readFile } from "fs/promises";
 import * as path from "path";
-import { promisify } from "util";
 
-const exec = promisify(cpExec);
+import { runDocker } from "./dockerCli";
 
 export type DockerContextInfo = {
 	name: string;
@@ -11,7 +9,7 @@ export type DockerContextInfo = {
 
 export async function listDockerContexts(): Promise<DockerContextInfo[]> {
 	try {
-		const { stdout } = await exec('docker context ls --format "{{.Name}}"');
+		const stdout = await runDocker(["context", "ls", "--format", "{{.Name}}"], undefined, { priority: "high" });
 		const names = stdout
 			.split(/\r?\n/)
 			.map((s) => s.trim())
@@ -32,7 +30,7 @@ export type ResolvedDockerContext = {
 
 export async function resolveDockerContext(name: string): Promise<ResolvedDockerContext | undefined> {
 	try {
-		const { stdout } = await exec(`docker context inspect ${name}`);
+		const stdout = await runDocker(["context", "inspect", name]);
 		const arr = JSON.parse(stdout);
 		const ctx = Array.isArray(arr) ? arr[0] : arr;
 		const endpoint = ctx?.Endpoints?.docker || ctx?.Endpoints?.["docker"];
