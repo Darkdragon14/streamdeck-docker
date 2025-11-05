@@ -55,13 +55,11 @@ async function runNextInContext(ctxKey: string): Promise<void> {
 	} finally {
 		releaseGlobal();
 		state.running = false;
-		// Schedule the next one if any
-		if (state.qHigh.length > 0 || state.qNorm.length > 0) {
-			// fire and forget to avoid stack buildup
-			setImmediate(() => {
-				runNextInContext(ctxKey).catch(() => undefined);
-			});
-		}
+		// Always attempt to schedule the next, it will no-op if queues are empty.
+		// This ensures urgent tasks enqueued during the previous run are not starved.
+		setImmediate(() => {
+			runNextInContext(ctxKey).catch(() => undefined);
+		});
 	}
 }
 
@@ -159,7 +157,8 @@ export async function stopContainer(name: string, context?: string): Promise<voi
 }
 
 export async function waitContainer(name: string, context?: string): Promise<void> {
-	await runDocker(["wait", name], context, { priority: "normal" });
+	// Ensure wait is not starved by high-priority telemetry (e.g., listContainers)
+	await runDocker(["wait", name], context, { priority: "urgent" });
 }
 
 export async function removeContainer(name: string, context?: string): Promise<void> {
@@ -256,7 +255,8 @@ export async function listSwarmServicesInStack(stack: string, context?: string):
 }
 
 export async function scaleSwarmService(name: string, replicas: number, context?: string): Promise<void> {
-	await runDocker(["service", "scale", `${name}=${replicas}`], context, { priority: "normal" });
+	// Treat scaling as control-plane: prioritize over telemetry
+	await runDocker(["service", "scale", `${name}=${replicas}`], context, { priority: "urgent" });
 }
 
 export async function isSwarmStack(stack: string, context?: string): Promise<boolean> {

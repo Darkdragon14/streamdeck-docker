@@ -11,6 +11,7 @@ import streamDeck, {
 
 import { CONTAINER_STATUS_RUNNING, DOCKER_START_ERROR_STATE } from "../constants/docker";
 import { subscribeContextHealth, unsubscribeContextHealth } from "../utils/contextHealth";
+import { getDockerContextsSnapshot } from "../utils/contextsStore";
 import {
 	containersByComposeProject,
 	isSwarmStack,
@@ -24,6 +25,7 @@ import {
 import { listDockerContexts } from "../utils/dockerContext";
 import { getEffectiveContext } from "../utils/getEffectiveContext";
 import { pingDocker } from "../utils/pingDocker";
+import { getStacksSnapshot, subscribeStacks, unsubscribeStacks } from "../utils/stacksStore";
 
 type DockerStackStartSettings = {
 	stackName?: string;
@@ -75,6 +77,18 @@ export class DockerStackStart extends SingletonAction<DockerStackStartSettings> 
 			}
 		});
 
+		// Subscribe to stacks changes derived from container store
+		subscribeStacks(context, instanceId, (stacks) => {
+			const stackName2 = this.currentStackNameByContext.get(instanceId);
+			if (!stackName2) return;
+			const info = stacks.get(stackName2);
+			if (!info) {
+				this.applyIfChanged(ev, instanceId, "Not\nFound", 1);
+				return;
+			}
+			this.applyIfChanged(ev, instanceId, this.formatTitle(stackName2), info.running > 0 ? 0 : 1);
+		});
+
 		// stackName already recorded above; keep UI in sync if provided
 
 		await this.updateStackState(ev, context);
@@ -89,6 +103,7 @@ export class DockerStackStart extends SingletonAction<DockerStackStartSettings> 
 		this.updatingByContext.delete(instanceId);
 		const context = (this.lastSettingsByContext.get(instanceId) || {}).contextName;
 		unsubscribeContextHealth(context === "default" ? undefined : context, instanceId);
+		unsubscribeStacks(context === "default" ? undefined : context, instanceId);
 	}
 
 	override async onSendToPlugin(ev: SendToPluginEvent<JsonObject, DockerStackStartSettings>): Promise<void> {
@@ -97,15 +112,17 @@ export class DockerStackStart extends SingletonAction<DockerStackStartSettings> 
 			const previous = this.lastSettingsByContext.get(instanceId) || {};
 			const effective = { ...previous, ...(ev.payload.settings as DockerStackStartSettings) };
 			const context = await getEffectiveContext(effective);
-			const stacks = await this.listComposeStacks(context);
-			const items = stacks.map((name) => ({ label: name, value: name }));
+			const snap = getStacksSnapshot(context);
+			const items = snap
+				? Array.from(snap.values()).map((s) => ({ label: s.name, value: s.name }))
+				: (await this.listComposeStacks(context)).map((name) => ({ label: name, value: name }));
 			streamDeck.ui.current?.sendToPropertyInspector({ event: "getStacks", items });
 		}
 		if (ev.payload.event === "getDockerContexts") {
-			const contexts = await listDockerContexts();
-			const items = [
-				...contexts.map((c) => ({ label: c.name, value: c.name })),
-			];
+			const snap = getDockerContextsSnapshot();
+			const items = snap
+				? Array.from(snap.values()).map((c) => ({ label: c.name, value: c.name }))
+				: (await listDockerContexts()).map((c) => ({ label: c.name, value: c.name }));
 			streamDeck.ui.current?.sendToPropertyInspector({ event: "getDockerContexts", items });
 		}
 		streamDeck.connect();
@@ -120,11 +137,11 @@ export class DockerStackStart extends SingletonAction<DockerStackStartSettings> 
 		// Refresh stacks in PI to reflect context change
 		(async () => {
 			const ctx = await getEffectiveContext(this.lastSettingsByContext.get(instanceId));
-			const stacks = await this.listComposeStacks(ctx);
-			streamDeck.ui.current?.sendToPropertyInspector({
-				event: "getStacks",
-				items: stacks.map((n) => ({ label: n, value: n })),
-			});
+			const snap = getStacksSnapshot(ctx);
+			const items = snap
+				? Array.from(snap.values()).map((s) => ({ label: s.name, value: s.name }))
+				: (await this.listComposeStacks(ctx)).map((n) => ({ label: n, value: n }));
+			streamDeck.ui.current?.sendToPropertyInspector({ event: "getStacks", items });
 		})();
 		// Immediate refresh
 		getEffectiveContext(this.lastSettingsByContext.get(instanceId)).then((ctx) => {

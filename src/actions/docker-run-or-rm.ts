@@ -9,8 +9,10 @@ import streamDeck, {
 	WillDisappearEvent,
 } from "@elgato/streamdeck";
 
-import { DOCKER_START_ERROR_STATE } from "../constants/docker";
+import { CONTAINER_STATUS_RUNNING, DOCKER_START_ERROR_STATE } from "../constants/docker";
+import { getContainersSnapshot, subscribeContainers, unsubscribeContainers } from "../utils/containerStore";
 import { subscribeContextHealth, unsubscribeContextHealth } from "../utils/contextHealth";
+import { getDockerContextsSnapshot } from "../utils/contextsStore";
 import { getContainerState, listImages, removeContainer, runDetached } from "../utils/dockerCli";
 import { listDockerContexts } from "../utils/dockerContext";
 import { getEffectiveContext } from "../utils/getEffectiveContext";
@@ -47,6 +49,16 @@ export class DockerRunOrRm extends SingletonAction<DockerRunOrRmSettings> {
 				this.updateDockerState(ev);
 			}
 		});
+
+		// Subscribe to container updates for immediate UI refresh
+		subscribeContainers(context, instanceId, (map) => {
+			const cn = (this.lastSettingsByContext.get(instanceId) || {}).containerName || "";
+			if (!cn) return;
+			const it = map.get(cn);
+			if (!it) return;
+			const newState = it.state === CONTAINER_STATUS_RUNNING ? 0 : 1;
+			if (ev.action.isKey()) ev.action.setState(newState);
+		});
 		this.updateDockerState(ev);
 		this.setIntervalFor(instanceId, () => this.updateDockerState(ev));
 	}
@@ -56,6 +68,7 @@ export class DockerRunOrRm extends SingletonAction<DockerRunOrRmSettings> {
 		this.clearIntervalFor(instanceId);
 		const context = (this.lastSettingsByContext.get(instanceId) || {}).contextName;
 		unsubscribeContextHealth(context === "default" ? undefined : context, instanceId);
+		unsubscribeContainers(context === "default" ? undefined : context, instanceId);
 	}
 
 	override async onSendToPlugin(ev: SendToPluginEvent<JsonObject, DockerRunOrRmSettings>): Promise<void> {
@@ -72,10 +85,10 @@ export class DockerRunOrRm extends SingletonAction<DockerRunOrRmSettings> {
 			});
 		}
 		if (ev.payload.event === "getDockerContexts") {
-			const contexts = await listDockerContexts();
-			const items = [
-				...contexts.map((c) => ({ label: c.name, value: c.name })),
-			];
+			const snap = getDockerContextsSnapshot();
+			const items = snap
+				? Array.from(snap.values()).map((c) => ({ label: c.name, value: c.name }))
+				: (await listDockerContexts()).map((c) => ({ label: c.name, value: c.name }));
 			streamDeck.ui.current?.sendToPropertyInspector({ event: "getDockerContexts", items });
 		}
 		streamDeck.connect();
@@ -111,7 +124,12 @@ export class DockerRunOrRm extends SingletonAction<DockerRunOrRmSettings> {
 		if (!dockerIsUp) {
 			return;
 		}
-		const st = await getContainerState(ev.payload.settings.containerName, context);
+		// Prefer store snapshot to avoid CLI call when possible
+		const snap = getContainersSnapshot(context);
+		let st: string | undefined = undefined;
+		const cn = ev.payload.settings.containerName;
+		if (snap && cn) st = snap.get(cn)?.state;
+		if (!st && cn) st = await getContainerState(cn, context);
 		const state = st ? 0 : 1;
 		ev.action.setState(state);
 	}

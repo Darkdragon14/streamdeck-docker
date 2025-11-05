@@ -12,6 +12,7 @@ import streamDeck, {
 import { CONTAINER_STATUS_RUNNING, DOCKER_START_ERROR_STATE } from "../constants/docker";
 import { getContainersSnapshot, subscribeContainers, unsubscribeContainers } from "../utils/containerStore";
 import { subscribeContextHealth, unsubscribeContextHealth } from "../utils/contextHealth";
+import { getDockerContextsSnapshot } from "../utils/contextsStore";
 import {
 	getContainerState,
 	listContainers,
@@ -106,18 +107,21 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 			const previous = this.lastSettingsByContext.get(instanceId) || {};
 			const effective = { ...previous, ...(ev.payload.settings as DockerStartSettings) };
 			const context = await getEffectiveContext(effective);
-			const items = await listContainers(true, context);
-			const containerNames = items.map((it) => ({ label: it.name, value: it.name }));
+			// Prefer store snapshot to avoid CLI call when possible
+			const snap = getContainersSnapshot(context);
+			const containerNames = snap
+				? Array.from(snap.values()).map((it) => ({ label: it.name, value: it.name }))
+				: (await listContainers(true, context)).map((it) => ({ label: it.name, value: it.name }));
 			streamDeck.ui.current?.sendToPropertyInspector({
 				event: "getContainers",
 				items: containerNames,
 			});
 		}
 		if (ev.payload.event === "getDockerContexts") {
-			const contexts = await listDockerContexts();
-			const items = [
-				...contexts.map((c) => ({ label: c.name, value: c.name })),
-			];
+			const snap = getDockerContextsSnapshot();
+			const items = snap
+				? Array.from(snap.values()).map((c) => ({ label: c.name, value: c.name }))
+				: (await listDockerContexts()).map((c) => ({ label: c.name, value: c.name }));
 			streamDeck.ui.current?.sendToPropertyInspector({ event: "getDockerContexts", items });
 		}
 		streamDeck.connect();

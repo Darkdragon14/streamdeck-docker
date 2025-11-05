@@ -11,6 +11,7 @@ import streamDeck, {
 import { CONTAINER_COUNT_ERROR_STATE, CONTAINER_LIST_ALL_STATUS } from "../constants/docker";
 import { getContainersSnapshot, subscribeContainers, unsubscribeContainers } from "../utils/containerStore";
 import { subscribeContextHealth, unsubscribeContextHealth } from "../utils/contextHealth";
+import { getDockerContextsSnapshot } from "../utils/contextsStore";
 import { listContainers } from "../utils/dockerCli";
 import { listDockerContexts } from "../utils/dockerContext";
 import { getEffectiveContext } from "../utils/getEffectiveContext";
@@ -41,10 +42,10 @@ export class ContainersCount extends SingletonAction<ContainersListSettings> {
 
 	override async onSendToPlugin(ev: SendToPluginEvent<JsonObject, ContainersListSettings>): Promise<void> {
 		if (ev.payload.event === "getDockerContexts") {
-			const contexts = await listDockerContexts();
-			const items = [
-				...contexts.map((c) => ({ label: c.name, value: c.name })),
-			];
+			const snap = getDockerContextsSnapshot();
+			const items = snap
+				? Array.from(snap.values()).map((c) => ({ label: c.name, value: c.name }))
+				: (await listDockerContexts()).map((c) => ({ label: c.name, value: c.name }));
 			streamDeck.ui.current?.sendToPropertyInspector({ event: "getDockerContexts", items });
 		}
 		streamDeck.connect();
