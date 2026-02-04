@@ -1,10 +1,33 @@
 import { execFile as cpExecFile } from "child_process";
+import { existsSync } from "fs";
 import { promisify } from "util";
 
 const execFile = promisify(cpExecFile as any) as (
 	file: string,
 	args: string[],
 ) => Promise<{ stdout: string; stderr: string }>;
+
+// Common Docker installation paths on macOS and Linux
+const DOCKER_PATHS = [
+	"/usr/local/bin/docker",
+	"/opt/homebrew/bin/docker",
+	"/usr/bin/docker",
+	"/snap/bin/docker",
+	"docker", // fallback to PATH
+];
+
+let resolvedDockerPath: string | undefined;
+
+function getDockerPath(): string {
+	if (resolvedDockerPath) return resolvedDockerPath;
+	for (const p of DOCKER_PATHS) {
+		if (p === "docker" || existsSync(p)) {
+			resolvedDockerPath = p;
+			return p;
+		}
+	}
+	return "docker";
+}
 
 // Simple global concurrency limiter + per-context scheduling with priority
 const MAX_GLOBAL_CONCURRENCY = parseInt(process.env.DOCKER_CLI_MAX_CONCURRENCY || "5", 10);
@@ -90,7 +113,7 @@ export async function runDocker(args: string[], context?: string, opts?: { prior
 	return scheduleInContext(
 		ctxKey,
 		async () => {
-			const { stdout } = await execFile("docker", finalArgs);
+			const { stdout } = await execFile(getDockerPath(), finalArgs);
 			return stdout;
 		},
 		priority,
