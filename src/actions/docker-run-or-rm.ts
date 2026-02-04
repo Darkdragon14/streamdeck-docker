@@ -1,13 +1,13 @@
 import streamDeck, {
 	action,
 	DidReceiveSettingsEvent,
-	JsonObject,
 	KeyDownEvent,
 	SendToPluginEvent,
 	SingletonAction,
 	WillAppearEvent,
 	WillDisappearEvent,
 } from "@elgato/streamdeck";
+import type { JsonObject } from "@elgato/utils";
 
 import { CONTAINER_STATUS_RUNNING, DOCKER_START_ERROR_STATE } from "../constants/docker";
 import { getContainersSnapshot, subscribeContainers, unsubscribeContainers } from "../utils/containerStore";
@@ -79,7 +79,7 @@ export class DockerRunOrRm extends SingletonAction<DockerRunOrRmSettings> {
 			const context = await getEffectiveContext(effective);
 			const images = await listImages(context);
 			const imageNames = images.map((name) => ({ label: name, value: name }));
-			streamDeck.ui.current?.sendToPropertyInspector({
+			streamDeck.ui.sendToPropertyInspector({
 				event: "getImages",
 				items: imageNames,
 			});
@@ -89,7 +89,7 @@ export class DockerRunOrRm extends SingletonAction<DockerRunOrRmSettings> {
 			const items = snap
 				? Array.from(snap.values()).map((c) => ({ label: c.name, value: c.name }))
 				: (await listDockerContexts()).map((c) => ({ label: c.name, value: c.name }));
-			streamDeck.ui.current?.sendToPropertyInspector({ event: "getDockerContexts", items });
+			streamDeck.ui.sendToPropertyInspector({ event: "getDockerContexts", items });
 		}
 		streamDeck.connect();
 	}

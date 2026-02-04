@@ -1,12 +1,12 @@
 import streamDeck, {
 	action,
 	DidReceiveSettingsEvent,
-	JsonObject,
 	SendToPluginEvent,
 	SingletonAction,
 	WillAppearEvent,
 	WillDisappearEvent,
 } from "@elgato/streamdeck";
+import type { JsonObject } from "@elgato/utils";
 
 import { CONTAINER_COUNT_ERROR_STATE, CONTAINER_LIST_ALL_STATUS } from "../constants/docker";
 import { getContainersSnapshot, subscribeContainers, unsubscribeContainers } from "../utils/containerStore";
@@ -46,7 +46,7 @@ export class ContainersCount extends SingletonAction<ContainersListSettings> {
 			const items = snap
 				? Array.from(snap.values()).map((c) => ({ label: c.name, value: c.name }))
 				: (await listDockerContexts()).map((c) => ({ label: c.name, value: c.name }));
-			streamDeck.ui.current?.sendToPropertyInspector({ event: "getDockerContexts", items });
+			streamDeck.ui.sendToPropertyInspector({ event: "getDockerContexts", items });
 		}
 		streamDeck.connect();
 	}

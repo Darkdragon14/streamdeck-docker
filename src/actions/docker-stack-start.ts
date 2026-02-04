@@ -1,13 +1,13 @@
 import streamDeck, {
 	action,
 	DidReceiveSettingsEvent,
-	JsonObject,
 	KeyDownEvent,
 	SendToPluginEvent,
 	SingletonAction,
 	WillAppearEvent,
 	WillDisappearEvent,
 } from "@elgato/streamdeck";
+import type { JsonObject } from "@elgato/utils";
 
 import { CONTAINER_STATUS_RUNNING, DOCKER_START_ERROR_STATE } from "../constants/docker";
 import { subscribeContextHealth, unsubscribeContextHealth } from "../utils/contextHealth";
@@ -116,14 +116,14 @@ export class DockerStackStart extends SingletonAction<DockerStackStartSettings> 
 			const items = snap
 				? Array.from(snap.values()).map((s) => ({ label: s.name, value: s.name }))
 				: (await this.listComposeStacks(context)).map((name) => ({ label: name, value: name }));
-			streamDeck.ui.current?.sendToPropertyInspector({ event: "getStacks", items });
+			streamDeck.ui.sendToPropertyInspector({ event: "getStacks", items });
 		}
 		if (ev.payload.event === "getDockerContexts") {
 			const snap = getDockerContextsSnapshot();
 			const items = snap
 				? Array.from(snap.values()).map((c) => ({ label: c.name, value: c.name }))
 				: (await listDockerContexts()).map((c) => ({ label: c.name, value: c.name }));
-			streamDeck.ui.current?.sendToPropertyInspector({ event: "getDockerContexts", items });
+			streamDeck.ui.sendToPropertyInspector({ event: "getDockerContexts", items });
 		}
 		streamDeck.connect();
 	}
@@ -141,7 +141,7 @@ export class DockerStackStart extends SingletonAction<DockerStackStartSettings> 
 			const items = snap
 				? Array.from(snap.values()).map((s) => ({ label: s.name, value: s.name }))
 				: (await this.listComposeStacks(ctx)).map((n) => ({ label: n, value: n }));
-			streamDeck.ui.current?.sendToPropertyInspector({ event: "getStacks", items });
+			streamDeck.ui.sendToPropertyInspector({ event: "getStacks", items });
 		})();
 		// Immediate refresh
 		getEffectiveContext(this.lastSettingsByContext.get(instanceId)).then((ctx) => {

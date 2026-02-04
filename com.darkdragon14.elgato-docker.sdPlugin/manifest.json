@@ -1,6 +1,6 @@
 {
     "Name": "elgato-docker",
-    "Version": "2.0.1",
+    "Version": "2.0.2.0",
     "Author": "@Darkdragon14",
     "Actions": [
         {
@@ -118,7 +118,9 @@
             "UUID": "com.darkdragon14.elgato-docker.docker-select-toggle",
             "Name": "Docker Select and Toggle",
             "Tooltip": "Rotate to change container and click to start/stop.",
-            "Controllers": ["Encoder"],
+            "Controllers": [
+                "Encoder"
+            ],
             "Encoder": {
                 "layout": "$X1"
             },
@@ -129,14 +131,14 @@
             ]
         }
     ],
-    "Category": "Docker",
+    "Category": "elgato-docker",
     "CategoryIcon": "imgs/plugin/category-icon",
     "CodePath": "bin/plugin.js",
     "Description": "Control your docker's container with your Stream Deck",
     "Icon": "imgs/plugin/marketplace",
-    "SDKVersion": 2,
+    "SDKVersion": 3,
     "Software": {
-        "MinimumVersion": "6.4"
+        "MinimumVersion": "6.9"
     },
     "OS": [
         {
