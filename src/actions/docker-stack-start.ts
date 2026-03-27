@@ -113,9 +113,10 @@ export class DockerStackStart extends SingletonAction<DockerStackStartSettings> 
 			const effective = { ...previous, ...(ev.payload.settings as DockerStackStartSettings) };
 			const context = await getEffectiveContext(effective);
 			const snap = getStacksSnapshot(context);
-			const items = snap
-				? Array.from(snap.values()).map((s) => ({ label: s.name, value: s.name }))
-				: (await this.listComposeStacks(context)).map((name) => ({ label: name, value: name }));
+			const items =
+				snap && snap.size > 0
+					? Array.from(snap.values()).map((s) => ({ label: s.name, value: s.name }))
+					: (await this.listComposeStacks(context)).map((name) => ({ label: name, value: name }));
 			streamDeck.ui.sendToPropertyInspector({ event: "getStacks", items });
 		}
 		if (ev.payload.event === "getDockerContexts") {
@@ -138,9 +139,10 @@ export class DockerStackStart extends SingletonAction<DockerStackStartSettings> 
 		(async () => {
 			const ctx = await getEffectiveContext(this.lastSettingsByContext.get(instanceId));
 			const snap = getStacksSnapshot(ctx);
-			const items = snap
-				? Array.from(snap.values()).map((s) => ({ label: s.name, value: s.name }))
-				: (await this.listComposeStacks(ctx)).map((n) => ({ label: n, value: n }));
+			const items =
+				snap && snap.size > 0
+					? Array.from(snap.values()).map((s) => ({ label: s.name, value: s.name }))
+					: (await this.listComposeStacks(ctx)).map((n) => ({ label: n, value: n }));
 			streamDeck.ui.sendToPropertyInspector({ event: "getStacks", items });
 		})();
 		// Immediate refresh
