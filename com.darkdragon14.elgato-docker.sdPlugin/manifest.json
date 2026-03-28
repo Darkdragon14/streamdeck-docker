@@ -15,22 +15,19 @@
             "States": [
                 {
                     "Image": "imgs/actions/docker-running/key",
-                    "TitleAlignment": "middle",
-                    "FontSize": 9
+                    "TitleAlignment": "middle"
                 },
                 {
                     "Image": "imgs/actions/docker-stopped/key",
-                    "TitleAlignment": "middle",
-                    "FontSize": 9
+                    "TitleAlignment": "middle"
                 },
                 {
                     "Image": "imgs/actions/error/key",
                     "TitleAlignment": "middle",
-                    "FontSize": 9,
                     "Title": "Please,\nlaunch\nDocker"
                 }
             ],
-            "UserTitleEnabled": false
+            "UserTitleEnabled": true
         },
         {
             "Name": "Stack start/stop",
@@ -44,22 +41,19 @@
             "States": [
                 {
                     "Image": "imgs/actions/docker-running/key",
-                    "TitleAlignment": "middle",
-                    "FontSize": 9
+                    "TitleAlignment": "middle"
                 },
                 {
                     "Image": "imgs/actions/docker-stopped/key",
-                    "TitleAlignment": "middle",
-                    "FontSize": 9
+                    "TitleAlignment": "middle"
                 },
                 {
                     "Image": "imgs/actions/error/key",
                     "TitleAlignment": "middle",
-                    "FontSize": 9,
                     "Title": "Please,\nlaunch\nDocker"
                 }
             ],
-            "UserTitleEnabled": false
+            "UserTitleEnabled": true
         },
         {
             "Name": "Containers Count",
@@ -73,17 +67,15 @@
             "States": [
                 {
                     "Image": "imgs/actions/docker-containers/key",
-                    "TitleAlignment": "top",
-                    "FontSize": 9
+                    "TitleAlignment": "top"
                 },
                 {
                     "Image": "imgs/actions/error/key",
                     "TitleAlignment": "middle",
-                    "FontSize": 9,
                     "Title": "Please,\nlaunch\nDocker"
                 }
             ],
-            "UserTitleEnabled": false
+            "UserTitleEnabled": true
         },
         {
             "Name": "Docker run/rm",
@@ -97,21 +89,19 @@
             "States": [
                 {
                     "Image": "imgs/actions/docker-running/key",
-                    "TitleAlignment": "middle",
-                    "FontSize": 9
+                    "TitleAlignment": "middle"
                 },
                 {
                     "Image": "imgs/actions/docker-stopped/key",
-                    "TitleAlignment": "middle",
-                    "FontSize": 9
+                    "TitleAlignment": "middle"
                 },
                 {
                     "Image": "imgs/actions/error/key",
                     "TitleAlignment": "middle",
-                    "FontSize": 9,
                     "Title": "Please,\nlaunch\nDocker"
                 }
-            ]
+            ],
+            "UserTitleEnabled": true
         },
         {
             "Icon": "imgs/actions/docker-running/key",
