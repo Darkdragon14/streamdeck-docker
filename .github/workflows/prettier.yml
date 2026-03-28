@@ -1,5 +1,5 @@
 name: Prettier with Elgato's configs
-on: 
+on:
   push:
   pull_request:
 
