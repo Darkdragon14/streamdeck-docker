@@ -1,5 +1,7 @@
 name: Prettier with Elgato's configs
-on: [push]
+on: 
+  push:
+  pull_request:
 
 jobs:
   prettier-check:
