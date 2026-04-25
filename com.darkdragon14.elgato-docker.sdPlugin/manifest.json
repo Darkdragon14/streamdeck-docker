@@ -119,6 +119,40 @@
                     "Image": "imgs/actions/docker-running/key"
                 }
             ]
+        },
+        {
+            "Name": "Container Health Check",
+            "UUID": "com.darkdragon14.elgato-docker.container-health-check",
+            "Icon": "imgs/actions/docker/icon",
+            "Tooltip": "Monitors a Docker container and shows its health status.",
+            "PropertyInspectorPath": "ui/docker/docker-health-check.html",
+            "Controllers": [
+                "Keypad"
+            ],
+            "Encoder": {
+                "layout": "$X1"
+            },
+            "States": [
+                {
+                    "Image": "imgs/actions/docker-stopped/key",
+                    "TitleAlignment": "middle"
+                },
+                {
+                    "Image": "imgs/actions/docker-running/key",
+                    "TitleAlignment": "middle"
+                },
+                {
+                    "Image": "imgs/actions/error/key",
+                    "TitleAlignment": "middle",
+                    "Title": "Please,\nlaunch\nDocker"
+                },
+                {
+                    "Image": "imgs/actions/error/key",
+                    "TitleAlignment": "middle",
+                    "Title": "Not found"
+                }
+            ],
+            "UserTitleEnabled": false
         }
     ],
     "Category": "elgato-docker",
