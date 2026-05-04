@@ -1,6 +1,6 @@
 {
     "Name": "elgato-docker",
-    "Version": "2.0.3.0",
+    "Version": "2.1.0.0",
     "Author": "@Darkdragon14",
     "Actions": [
         {
@@ -67,7 +67,7 @@
             "States": [
                 {
                     "Image": "imgs/actions/docker-containers/key",
-                    "TitleAlignment": "top"
+                    "TitleAlignment": "middle"
                 },
                 {
                     "Image": "imgs/actions/error/key",
