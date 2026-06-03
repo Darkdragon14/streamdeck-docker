@@ -151,12 +151,7 @@ export async function listContainers(all: boolean, context?: string, filters: st
 	for (const line of out.split(/\r?\n/)) {
 		if (!line.trim()) continue;
 		const [name, state, labelsJson] = line.split("\t");
-		let labels: Record<string, string> | undefined;
-		try {
-			labels = labelsJson ? parseDockerLabels(JSON.parse(labelsJson)) : undefined;
-		} catch {
-			labels = labelsJson ? parseDockerLabels(labelsJson) : undefined;
-		}
+		const labels = parseDockerLabels(labelsJson);
 		items.push({ name, state, labels });
 	}
 	return items;
@@ -164,6 +159,11 @@ export async function listContainers(all: boolean, context?: string, filters: st
 
 function parseDockerLabels(value: unknown): Record<string, string> | undefined {
 	if (!value) return undefined;
+	if (typeof value === "string") {
+		try {
+			return parseDockerLabels(JSON.parse(value));
+		} catch {}
+	}
 	if (typeof value === "object" && !Array.isArray(value)) return value as Record<string, string>;
 	if (typeof value !== "string") return undefined;
 
