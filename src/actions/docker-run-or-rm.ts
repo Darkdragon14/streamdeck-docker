@@ -91,7 +91,6 @@ export class DockerRunOrRm extends SingletonAction<DockerRunOrRmSettings> {
 				: (await listDockerContexts()).map((c) => ({ label: c.name, value: c.name }));
 			streamDeck.ui.sendToPropertyInspector({ event: "getDockerContexts", items });
 		}
-		streamDeck.connect();
 	}
 
 	override async onKeyDown(ev: KeyDownEvent): Promise<void> {

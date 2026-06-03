@@ -125,7 +125,6 @@ export class DockerRunningStackStop extends SingletonAction<RunningStackStopSett
 				: (await listDockerContexts()).map((c) => ({ label: c.name, value: c.name }));
 			streamDeck.ui.sendToPropertyInspector({ event: "getDockerContexts", items });
 		}
-		streamDeck.connect();
 	}
 
 	override async onKeyDown(ev: KeyDownEvent<RunningStackStopSettings>): Promise<void> {

@@ -48,7 +48,6 @@ export class ContainersCount extends SingletonAction<ContainersListSettings> {
 				: (await listDockerContexts()).map((c) => ({ label: c.name, value: c.name }));
 			streamDeck.ui.sendToPropertyInspector({ event: "getDockerContexts", items });
 		}
-		streamDeck.connect();
 	}
 
 	override async onWillAppear(ev: WillAppearEvent<ContainersListSettings>): Promise<void> {
