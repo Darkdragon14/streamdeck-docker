@@ -16,15 +16,11 @@ import {
 	containersByComposeProject,
 	isSwarmStack,
 	listComposeProjects,
-	listSwarmServicesInStack,
-	scaleSwarmService,
-	startContainer,
-	stopContainer,
-	waitContainer,
 } from "../utils/dockerCli";
 import { listDockerContexts } from "../utils/dockerContext";
 import { getEffectiveContext } from "../utils/getEffectiveContext";
 import { pingDocker } from "../utils/pingDocker";
+import { toggleStackLifecycle } from "../utils/stackLifecycle";
 import { getStacksSnapshot, subscribeStacks, unsubscribeStacks } from "../utils/stacksStore";
 
 type DockerStackStartSettings = {
@@ -165,77 +161,14 @@ export class DockerStackStart extends SingletonAction<DockerStackStartSettings> 
 			return;
 		}
 
-		const containers = await containersByComposeProject(stackName, context);
-		let swarm = false;
-		// If no containers, still check if it's a swarm stack (scaled to 0)
-		try {
-			swarm = await isSwarmStack(stackName, context);
-		} catch {}
-
-		if (!swarm && containers.length === 0) {
+		const result = await toggleStackLifecycle(
+			stackName,
+			context,
+			this.swarmDesiredByInstance.get(instanceId),
+			(desired) => this.swarmDesiredByInstance.set(instanceId, desired),
+		);
+		if (result === "not-found") {
 			ev.action.setTitle("Not\nFound");
-			return;
-		}
-
-		if (swarm) {
-			// Toggle by scaling services
-			const running = containers.some((c) => c.state === CONTAINER_STATUS_RUNNING);
-			if (running) {
-				// Scale all services to 0 and remember desired replicas
-				const services = await listSwarmServicesInStack(stackName, context);
-				const desired: Record<string, number> = {};
-				for (const s of services) {
-					if (s.mode?.toLowerCase() === "global") {
-						streamDeck.logger.warn(`Global service ${s.name} cannot be scaled; skipping.`);
-						continue;
-					}
-					const target = Number.isFinite(s.replicasDesired as any) ? (s.replicasDesired as number) : 1;
-					desired[s.name] = target;
-					try {
-						await scaleSwarmService(s.name, 0, context);
-					} catch (e: any) {
-						streamDeck.logger.warn(`Failed scaling service ${s.name} to 0: ${e?.message || e}`);
-					}
-				}
-				this.swarmDesiredByInstance.set(instanceId, desired);
-			} else {
-				// Scale back to previous desired replicas (default 1)
-				const remembered = this.swarmDesiredByInstance.get(instanceId) || {};
-				const services = await listSwarmServicesInStack(stackName, context);
-				for (const s of services) {
-					if (s.mode?.toLowerCase() === "global") continue;
-					const target =
-						remembered[s.name] ?? (Number.isFinite(s.replicasDesired as any) ? (s.replicasDesired as number) : 1);
-					try {
-						await scaleSwarmService(s.name, Math.max(1, target), context);
-					} catch (e: any) {
-						streamDeck.logger.warn(`Failed scaling service ${s.name}: ${e?.message || e}`);
-					}
-				}
-			}
-		} else {
-			// Compose-style: start/stop each container
-			const allRunning = containers.every((c) => c.state === CONTAINER_STATUS_RUNNING);
-			if (allRunning) {
-				for (const c of containers) {
-					try {
-						await stopContainer(c.name, context).catch(() => {});
-						await waitContainer(c.name, context).catch(() => {});
-					} catch (e: any) {
-						streamDeck.logger.warn(`Failed stopping container: ${e?.message || e}`);
-					}
-				}
-			} else {
-				for (const c of containers) {
-					try {
-						if (c.state !== CONTAINER_STATUS_RUNNING) {
-							await startContainer(c.name, context).catch(() => {});
-						}
-					} catch (e: any) {
-						streamDeck.logger.warn(`Failed starting container: ${e?.message || e}`);
-					}
-				}
-			}
 		}
 	}
 

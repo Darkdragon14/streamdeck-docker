@@ -1,6 +1,7 @@
 import streamDeck from "@elgato/streamdeck";
 
 import { ContainersCount } from "./actions/containers-count";
+import { DockerRunningStackStop } from "./actions/docker-running-stack-stop";
 import { DockerRunOrRm } from "./actions/docker-run-or-rm";
 import { DockerSelectToggle } from "./actions/docker-select-toggle";
 import { DockerStackStart } from "./actions/docker-stack-start";
@@ -13,6 +14,7 @@ streamDeck.logger.setLevel("trace");
 streamDeck.actions.registerAction(new DockerRunOrRm());
 streamDeck.actions.registerAction(new DockerStart());
 streamDeck.actions.registerAction(new DockerStackStart());
+streamDeck.actions.registerAction(new DockerRunningStackStop());
 streamDeck.actions.registerAction(new ContainersCount());
 streamDeck.actions.registerAction(new DockerSelectToggle());
 

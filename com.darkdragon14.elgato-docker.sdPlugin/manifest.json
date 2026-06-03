@@ -56,6 +56,32 @@
             "UserTitleEnabled": true
         },
         {
+            "Name": "Running stack stop",
+            "UUID": "com.darkdragon14.elgato-docker.docker-running-stack-stop",
+            "Icon": "imgs/actions/docker/icon",
+            "Tooltip": "Automatically bind to a running stack and stop it.",
+            "PropertyInspectorPath": "ui/docker/docker-running-stack-stop.html",
+            "Controllers": [
+                "Keypad"
+            ],
+            "States": [
+                {
+                    "Image": "imgs/actions/docker-running/key",
+                    "TitleAlignment": "middle"
+                },
+                {
+                    "Image": "imgs/actions/docker-stopped/key",
+                    "TitleAlignment": "middle"
+                },
+                {
+                    "Image": "imgs/actions/error/key",
+                    "TitleAlignment": "middle",
+                    "Title": "Please,\nlaunch\nDocker"
+                }
+            ],
+            "UserTitleEnabled": true
+        },
+        {
             "Name": "Containers Count",
             "UUID": "com.darkdragon14.elgato-docker.containers-count",
             "Icon": "imgs/actions/docker/icon",
