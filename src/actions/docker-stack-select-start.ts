@@ -112,7 +112,7 @@ export class DockerStackSelectStart extends SingletonAction<DockerStackSelectSta
 		if (state.updateInterval) clearInterval(state.updateInterval);
 		state.updateInterval = setInterval(async () => {
 			await this.updateStackFeedback(ev, context);
-		}, 1000);
+		}, 10000);
 	}
 
 	private async updateStacksList(state: StackDialState, context?: string): Promise<void> {
