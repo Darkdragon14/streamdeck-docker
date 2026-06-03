@@ -124,7 +124,6 @@ export class DockerStart extends SingletonAction<DockerStartSettings> {
 				: (await listDockerContexts()).map((c) => ({ label: c.name, value: c.name }));
 			streamDeck.ui.sendToPropertyInspector({ event: "getDockerContexts", items });
 		}
-		streamDeck.connect();
 	}
 
 	override onDidReceiveSettings(ev: DidReceiveSettingsEvent<DockerStartSettings>): void {

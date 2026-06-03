@@ -6,3 +6,5 @@ node_modules/
 *.sdPlugin/logs
 .vscode
 *.streamDeckPlugin
+.npm-cache
+.DS_Store

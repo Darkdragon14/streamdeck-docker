@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+	<head lang="en">
+		<title>Running Stack Stop Settings</title>
+		<meta charset="utf-8" />
+		<script src="https://sdpi-components.dev/releases/v3/sdpi-components.js"></script>
+	</head>
+
+	<body>
+		<sdpi-heading>Connection</sdpi-heading>
+		<sdpi-item label="Context">
+			<sdpi-select
+				setting="contextName"
+				placeholder="Select Context"
+				datasource="getDockerContexts"
+				loading="Fetching contexts..."
+				hot-reload
+			>
+			</sdpi-select>
+		</sdpi-item>
+		<sdpi-heading>Notes</sdpi-heading>
+		<sdpi-description>
+			Each visible key automatically binds to one running Compose or Swarm stack in this context.
+		</sdpi-description>
+	</body>
+</html>
