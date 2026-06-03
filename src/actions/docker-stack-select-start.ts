@@ -11,7 +11,7 @@ import { CONTAINER_STATUS_RUNNING, DOCKER_START_ERROR_STATE } from "../constants
 import { containersByComposeProject, isSwarmStack, listComposeProjects } from "../utils/dockerCli";
 import { getEffectiveContext } from "../utils/getEffectiveContext";
 import { pingDockerForDials } from "../utils/pingDocker";
-import { startStackLifecycle } from "../utils/stackLifecycle";
+import { toggleStackLifecycle } from "../utils/stackLifecycle";
 
 type DockerStackSelectStartSettings = {
 	contextName?: string;
@@ -95,7 +95,9 @@ export class DockerStackSelectStart extends SingletonAction<DockerStackSelectSta
 			return;
 		}
 
-		const result = await startStackLifecycle(stackName, context, state.rememberedSwarmDesired);
+		const result = await toggleStackLifecycle(stackName, context, state.rememberedSwarmDesired, (desired) => {
+			state.rememberedSwarmDesired = desired;
+		});
 		if (result === "not-found") {
 			this.setFeedback(ev, "Not Found", STOPPED_COLOR);
 			return;

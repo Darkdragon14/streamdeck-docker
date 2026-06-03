@@ -149,8 +149,8 @@
         {
             "Icon": "imgs/actions/docker-running/key",
             "UUID": "com.darkdragon14.elgato-docker.docker-stack-select-start",
-            "Name": "Docker Stack Select and Start",
-            "Tooltip": "Rotate to change stack and click to start it.",
+            "Name": "Docker Stack Select and Toggle",
+            "Tooltip": "Rotate to change stack and click to start/stop it.",
             "Controllers": [
                 "Encoder"
             ],
