@@ -12,11 +12,7 @@ import type { JsonObject } from "@elgato/utils";
 import { CONTAINER_STATUS_RUNNING, DOCKER_START_ERROR_STATE } from "../constants/docker";
 import { subscribeContextHealth, unsubscribeContextHealth } from "../utils/contextHealth";
 import { getDockerContextsSnapshot } from "../utils/contextsStore";
-import {
-	containersByComposeProject,
-	isSwarmStack,
-	listComposeProjects,
-} from "../utils/dockerCli";
+import { containersByComposeProject, isSwarmStack, listComposeProjects } from "../utils/dockerCli";
 import { listDockerContexts } from "../utils/dockerContext";
 import { getEffectiveContext } from "../utils/getEffectiveContext";
 import { pingDocker } from "../utils/pingDocker";

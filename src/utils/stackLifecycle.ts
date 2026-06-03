@@ -120,7 +120,8 @@ async function startSwarmStack(
 	const services = await listSwarmServicesInStack(stackName, context);
 	for (const s of services) {
 		if (s.mode?.toLowerCase() === "global") continue;
-		const target = remembered[s.name] ?? (Number.isFinite(s.replicasDesired as any) ? (s.replicasDesired as number) : 1);
+		const target =
+			remembered[s.name] ?? (Number.isFinite(s.replicasDesired as any) ? (s.replicasDesired as number) : 1);
 		try {
 			await scaleSwarmService(s.name, Math.max(1, target), context);
 		} catch (e: any) {

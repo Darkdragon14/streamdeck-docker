@@ -139,7 +139,9 @@ export class DockerRunningStackStop extends SingletonAction<RunningStackStopSett
 			return;
 		}
 
-		const result = await stopStackLifecycle(stackName, context, (desired) => swarmDesiredByInstance.set(instanceId, desired));
+		const result = await stopStackLifecycle(stackName, context, (desired) =>
+			swarmDesiredByInstance.set(instanceId, desired),
+		);
 		if (result === "not-found") {
 			this.applyIfChanged(ev.action, instanceId, "Not\nFound", 1);
 			return;
@@ -188,7 +190,11 @@ export class DockerRunningStackStop extends SingletonAction<RunningStackStopSett
 		const assignedInstanceIds = new Set<string>();
 		for (const stack of runningStacks) {
 			const slottedInstanceId = slots.get(stack.name);
-			if (slottedInstanceId && visibleInstanceIds.has(slottedInstanceId) && !assignedInstanceIds.has(slottedInstanceId)) {
+			if (
+				slottedInstanceId &&
+				visibleInstanceIds.has(slottedInstanceId) &&
+				!assignedInstanceIds.has(slottedInstanceId)
+			) {
 				assignedInstanceIds.add(slottedInstanceId);
 			}
 		}

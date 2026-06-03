@@ -1,8 +1,8 @@
 import streamDeck from "@elgato/streamdeck";
 
 import { ContainersCount } from "./actions/containers-count";
-import { DockerRunningStackStop } from "./actions/docker-running-stack-stop";
 import { DockerRunOrRm } from "./actions/docker-run-or-rm";
+import { DockerRunningStackStop } from "./actions/docker-running-stack-stop";
 import { DockerSelectToggle } from "./actions/docker-select-toggle";
 import { DockerStackStart } from "./actions/docker-stack-start";
 import { DockerStart } from "./actions/docker-start";
