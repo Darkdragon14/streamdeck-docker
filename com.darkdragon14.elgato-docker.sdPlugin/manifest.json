@@ -145,6 +145,23 @@
                     "Image": "imgs/actions/docker-running/key"
                 }
             ]
+        },
+        {
+            "Icon": "imgs/actions/docker-running/key",
+            "UUID": "com.darkdragon14.elgato-docker.docker-stack-select-start",
+            "Name": "Docker Stack Select and Start",
+            "Tooltip": "Rotate to change stack and click to start it.",
+            "Controllers": [
+                "Encoder"
+            ],
+            "Encoder": {
+                "layout": "layouts/full-canvas.json"
+            },
+            "States": [
+                {
+                    "Image": "imgs/actions/docker-running/key"
+                }
+            ]
         }
     ],
     "Category": "elgato-docker",
