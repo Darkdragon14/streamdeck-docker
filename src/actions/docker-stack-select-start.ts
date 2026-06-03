@@ -193,10 +193,6 @@ export class DockerStackSelectStart extends SingletonAction<DockerStackSelectSta
 	private getInstanceId(ev: any): string {
 		return (ev.action as any).id || ev.context;
 	}
-
-	private formatTitle(title: string): string {
-		return title.split("-").join("\n");
-	}
 }
 
 function createDockerTile(background: string, title: string): string {
