@@ -13,7 +13,7 @@ import { getEffectiveContext } from "../utils/getEffectiveContext";
 import { pingDockerForDials } from "../utils/pingDocker";
 import { toggleStackLifecycle } from "../utils/stackLifecycle";
 
-type DockerStackSelectStartSettings = {
+type DockerStackSelectToggleSettings = {
 	contextName?: string;
 	remoteHost?: string;
 };
@@ -29,15 +29,15 @@ type StackDialState = {
 const RUNNING_COLOR = "#3fb950";
 const STOPPED_COLOR = "#f85149";
 
-@action({ UUID: "com.darkdragon14.elgato-docker.docker-stack-select-start" })
-export class DockerStackSelectStart extends SingletonAction<DockerStackSelectStartSettings> {
+@action({ UUID: "com.darkdragon14.elgato-docker.docker-stack-select-toggle" })
+export class DockerStackSelectToggle extends SingletonAction<DockerStackSelectToggleSettings> {
 	private stateByInstance: Map<string, StackDialState> = new Map();
 
-	override async onWillAppear(ev: WillAppearEvent<DockerStackSelectStartSettings>): Promise<void> {
+	override async onWillAppear(ev: WillAppearEvent<DockerStackSelectToggleSettings>): Promise<void> {
 		if (!ev.action.isDial()) return;
 
 		const instanceId = this.getInstanceId(ev);
-		const context = await getEffectiveContext(ev.payload.settings as DockerStackSelectStartSettings);
+		const context = await getEffectiveContext(ev.payload.settings as DockerStackSelectToggleSettings);
 		const dockerIsUp = await pingDockerForDials(ev, DOCKER_START_ERROR_STATE, context);
 		const state = this.getState(instanceId);
 
@@ -50,16 +50,16 @@ export class DockerStackSelectStart extends SingletonAction<DockerStackSelectSta
 		this.startUpdateLoop(ev, context);
 	}
 
-	override onWillDisappear(ev: WillDisappearEvent<DockerStackSelectStartSettings>): void {
+	override onWillDisappear(ev: WillDisappearEvent<DockerStackSelectToggleSettings>): void {
 		const instanceId = this.getInstanceId(ev);
 		const state = this.stateByInstance.get(instanceId);
 		if (state?.updateInterval) clearInterval(state.updateInterval);
 		this.stateByInstance.delete(instanceId);
 	}
 
-	override async onDialRotate(ev: DialRotateEvent<DockerStackSelectStartSettings>): Promise<void> {
+	override async onDialRotate(ev: DialRotateEvent<DockerStackSelectToggleSettings>): Promise<void> {
 		const instanceId = this.getInstanceId(ev);
-		const context = await getEffectiveContext(ev.payload.settings as DockerStackSelectStartSettings);
+		const context = await getEffectiveContext(ev.payload.settings as DockerStackSelectToggleSettings);
 		const dockerIsUp = await pingDockerForDials(ev, DOCKER_START_ERROR_STATE, context);
 		if (!dockerIsUp) return;
 
@@ -78,9 +78,9 @@ export class DockerStackSelectStart extends SingletonAction<DockerStackSelectSta
 		await this.updateStackFeedback(ev, context);
 	}
 
-	override async onDialDown(ev: DialDownEvent<DockerStackSelectStartSettings>): Promise<void> {
+	override async onDialDown(ev: DialDownEvent<DockerStackSelectToggleSettings>): Promise<void> {
 		const instanceId = this.getInstanceId(ev);
-		const context = await getEffectiveContext(ev.payload.settings as DockerStackSelectStartSettings);
+		const context = await getEffectiveContext(ev.payload.settings as DockerStackSelectToggleSettings);
 		const dockerIsUp = await pingDockerForDials(ev, DOCKER_START_ERROR_STATE, context);
 		if (!dockerIsUp) return;
 

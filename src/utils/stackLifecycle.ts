@@ -13,37 +13,6 @@ import {
 
 export type StackToggleResult = "ok" | "not-found";
 
-export async function startStackLifecycle(
-	stackName: string,
-	context: string | undefined,
-	rememberedSwarmDesired?: Record<string, number>,
-): Promise<StackToggleResult> {
-	const containers = await containersByComposeProject(stackName, context);
-	let swarm = false;
-	try {
-		swarm = await isSwarmStack(stackName, context);
-	} catch {}
-
-	if (!swarm && containers.length === 0) return "not-found";
-
-	if (swarm) {
-		await startSwarmStack(stackName, context, rememberedSwarmDesired);
-		return "ok";
-	}
-
-	for (const c of containers) {
-		try {
-			if (c.state !== CONTAINER_STATUS_RUNNING) {
-				await startContainer(c.name, context).catch(() => {});
-			}
-		} catch (e: any) {
-			streamDeck.logger.warn(`Failed starting container: ${e?.message || e}`);
-		}
-	}
-
-	return "ok";
-}
-
 export async function toggleStackLifecycle(
 	stackName: string,
 	context: string | undefined,
