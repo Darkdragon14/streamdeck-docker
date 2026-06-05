@@ -7,12 +7,15 @@ A powerful plugin for Elgato Stream Deck that allows you to manage Docker contai
 
 ## Features
 
-- Start/Stop Containers: Control the lifecycle of Docker containers with a single key press.
-- Display Container Status: Show the current state (e.g., running, stopped) directly on your Stream Deck keys.
-- User-Friendly: Integrates seamlessly with the Stream Deck interface for effortless container management.
-- Multi-Container Support: Handles multiple Docker containers simultaneously.
-- Start/Stop stack/compose: Control the lifecycle of Docker containers with a single key press.
-- Docker Contexts: Select a Docker Context per key. TLS certificates are handled by the Docker Context.
+- Start/Stop Containers: Control Docker container lifecycle with a single key press.
+- Display Container Status: Show the current state (for example, running or stopped) directly on your Stream Deck keys.
+- User-Friendly Interface: Integrates seamlessly with Stream Deck for effortless container management.
+- Multi-Container Support: Manage multiple Docker containers simultaneously.
+- Stack Start/Stop: Control an entire Docker Compose stack with a single key press.
+- Running Stack Stop: Automatically bind a key to a running stack and stop it when pressed.
+- Docker Stack Select and Toggle: Use a Stream Deck + dial to browse stacks and start or stop the selected stack.
+- Fast Stack Refresh: Refresh running stacks every 10 seconds.
+- Docker Context Support: Select a Docker Context per key. TLS certificates are handled by the Docker Context.
 
 ## Future improvements
 
@@ -32,7 +35,9 @@ Before using this plugin, ensure you have the following installed:
 
 ### Get the plugin
 
-Go in [Releases](https://github.com/Darkdragon14/streamdeck-docker/releases) section and download the .streamDeckPlugin file from the latest release.
+Install it from the [Elgato Marketplace](https://marketplace.elgato.com/product/elgato-docker-b4403038-98e1-4f4b-a336-cdb0cb84019a).
+
+Or go in the [Releases](https://github.com/Darkdragon14/streamdeck-docker/releases) section and download the .streamDeckPlugin file from the latest release.
 
 ### Clone the repository:
 
