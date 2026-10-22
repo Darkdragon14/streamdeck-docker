@@ -5,6 +5,9 @@
         "prettier": "npx prettier --write ."
     },
     "type": "module",
+    "engines": {
+        "node": ">=24.22.1 <25"
+    },
     "devDependencies": {
         "@elgato/cli": "^1.7.0",
         "@elgato/prettier-config": "^0.2.4",
