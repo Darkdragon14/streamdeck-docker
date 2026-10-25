@@ -20,3 +20,12 @@ jobs:
 
       - name: Check formatting with Prettier
         run: npx prettier --check .
+
+      - name: Check types
+        run: npx tsc --noEmit
+
+      - name: Build and test runtime compatibility
+        run: npm test
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=high

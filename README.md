@@ -37,6 +37,8 @@ Development and CI use the patched Node.js version pinned in `.nvmrc`. Node.js 2
 
 The installed plugin uses **Stream Deck's bundled Node.js 24 runtime**, not the Node.js installed on your system. Stream Deck 7.1 introduced Node.js 24 support, but this minimum version alone does not guarantee the security fixes: keep Stream Deck updated and verify that its bundled Node.js 24 runtime is at least 24.22.1. The plugin manifest selects only the Node.js major version; it cannot pin a security patch. Updating npm dependencies or your system Node.js does not update this bundled runtime.
 
+The dependency override for `@elgato/utils@0.4.1` pins patched Zod 4.6.7 to address [GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5). The current Elgato dependency declares Zod 3.25 but imports its bundled Zod 4 Mini API (`zod/v4-mini`), which the patched version also exports. `npm test` checks RPC schema compatibility and built-plugin registration. Reassess the override when Elgato ships a dependency range that includes patched Zod.
+
 ## Installation
 
 ### Get the plugin
