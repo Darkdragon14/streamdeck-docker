@@ -27,9 +27,17 @@ A powerful plugin for Elgato Stream Deck that allows you to manage Docker contai
 
 Before using this plugin, ensure you have the following installed:
 
-- Elgato Stream Deck Software (latest version)
+- Elgato Stream Deck Software 7.1 or newer (latest version recommended)
 - Docker (with the Docker Engine API enabled)
-- Node.js (for development and building the plugin)
+- Node.js 24.22.1 or newer within the 24.x line (for development and building the plugin)
+
+### Node.js security updates
+
+Development and CI use the patched Node.js version pinned in `.nvmrc`. Node.js 24.22.1 addresses the [October 2026 security advisory](https://nodejs.org/en/blog/vulnerability/october-2026-security-releases). npm rejects unsupported Node.js versions via `engines` and `.npmrc`.
+
+The installed plugin uses **Stream Deck's bundled Node.js 24 runtime**, not the Node.js installed on your system. Stream Deck 7.1 introduced Node.js 24 support, but this minimum version alone does not guarantee the security fixes: keep Stream Deck updated and verify that its bundled Node.js 24 runtime is at least 24.22.1. The plugin manifest selects only the Node.js major version; it cannot pin a security patch. Updating npm dependencies or your system Node.js does not update this bundled runtime.
+
+The dependency override for `@elgato/utils@0.4.1` pins patched Zod 4.6.7 to address [GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5). The current Elgato dependency declares Zod 3.25 but imports its bundled Zod 4 Mini API (`zod/v4-mini`), which the patched version also exports. `npm test` checks RPC schema compatibility and built-plugin registration. Reassess the override when Elgato ships a dependency range that includes patched Zod.
 
 ## Installation
 
@@ -47,8 +55,12 @@ git clone https://github.com/Darkdragon14/streamdeck-docker.git
 
 ### Install the dependencies:
 
+Select the project's Node.js version with [nvm](https://github.com/nvm-sh/nvm) (or install the version from `.nvmrc` using your preferred version manager):
+
 ```bash
-npm install
+nvm install
+nvm use
+npm ci
 ```
 
 ### Build the project:
@@ -80,7 +92,9 @@ Clone the repository and navigate to the project directory:
 ```bash
 git clone https://github.com/Darkdragon14/streamdeck-docker.git
 cd streamdeck-docker
-npm i
+nvm install
+nvm use
+npm ci
 npm run watch
 ```
 

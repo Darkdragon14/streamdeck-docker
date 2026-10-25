@@ -1,10 +1,14 @@
 {
     "scripts": {
         "build": "rollup -c",
+        "test": "npm run build && node --test tests/*.test.mjs",
         "watch": "rollup -c -w --watch.onEnd=\"streamdeck restart com.darkdragon14.elgato-docker\"",
         "prettier": "npx prettier --write ."
     },
     "type": "module",
+    "engines": {
+        "node": ">=24.22.1 <25"
+    },
     "devDependencies": {
         "@elgato/cli": "^1.7.0",
         "@elgato/prettier-config": "^0.2.4",
@@ -20,7 +24,12 @@
     },
     "dependencies": {
         "@elgato/streamdeck": "^2.0.1",
-        "@elgato/utils": "^0.4.1"
+        "@elgato/utils": "0.4.1"
+    },
+    "overrides": {
+        "@elgato/utils@0.4.1": {
+            "zod": "4.6.7"
+        }
     },
     "prettier": "@elgato/prettier-config"
 }

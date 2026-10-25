@@ -1,6 +1,6 @@
 {
     "Name": "elgato-docker",
-    "Version": "2.2.0.0",
+    "Version": "2.2.0.1",
     "Author": "@Darkdragon14",
     "Actions": [
         {
@@ -171,7 +171,7 @@
     "Icon": "imgs/plugin/marketplace",
     "SDKVersion": 3,
     "Software": {
-        "MinimumVersion": "6.9"
+        "MinimumVersion": "7.1"
     },
     "OS": [
         {
@@ -184,7 +184,7 @@
         }
     ],
     "Nodejs": {
-        "Version": "20",
+        "Version": "24",
         "Debug": "enabled"
     },
     "UUID": "com.darkdragon14.elgato-docker"
